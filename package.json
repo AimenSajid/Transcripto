@@ -7,7 +7,7 @@
     "dev": "vite dev",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && wrangler deploy -c dist/transcripto/wrangler.json",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
