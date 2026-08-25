@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "deploy": "npm run build && wrangler deploy -c dist/transcripto/wrangler.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "hono": "^4.13.4",
@@ -26,6 +27,7 @@
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
     "vite": "^7.3.6",
+    "vitest": "^4.1.11",
     "wrangler": "^4.125.0"
   }
 }

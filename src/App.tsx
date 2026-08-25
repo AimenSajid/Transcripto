@@ -1,23 +1,19 @@
 import { useEffect, useState } from "react";
-import type { TranscribeChunkResponse } from "../shared/types";
+import { arrayBufferToBase64 } from "./audio/wav";
+import { segmentAudioFile } from "./audio";
+import type { ChunkResult, TranscribeChunkResponse } from "../shared/types";
 
 type HealthStatus = "checking" | "ok" | "error";
 type TranscribeStatus = "idle" | "transcribing" | "done" | "error";
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary);
-}
+type SegmentStatus = "idle" | "segmenting" | "done" | "error";
 
 function App() {
   const [status, setStatus] = useState<HealthStatus>("checking");
   const [transcribeStatus, setTranscribeStatus] =
     useState<TranscribeStatus>("idle");
   const [result, setResult] = useState<TranscribeChunkResponse | null>(null);
+  const [segmentStatus, setSegmentStatus] = useState<SegmentStatus>("idle");
+  const [chunks, setChunks] = useState<ChunkResult[] | null>(null);
 
   useEffect(() => {
     fetch("/api/health")
@@ -48,6 +44,18 @@ function App() {
       setTranscribeStatus("done");
     } catch {
       setTranscribeStatus("error");
+    }
+  }
+
+  async function segmentFile(file: File) {
+    setSegmentStatus("segmenting");
+    setChunks(null);
+    try {
+      const result = await segmentAudioFile(file);
+      setChunks(result);
+      setSegmentStatus("done");
+    } catch {
+      setSegmentStatus("error");
     }
   }
 
@@ -87,6 +95,36 @@ function App() {
         <p className="max-w-md text-center text-sm text-neutral-200">
           {result.text}
         </p>
+      )}
+
+      <label className="flex flex-col items-center gap-2 text-sm text-neutral-400">
+        Segment an audio file
+        <input
+          type="file"
+          accept="audio/*"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void segmentFile(file);
+          }}
+          className="text-xs"
+        />
+      </label>
+
+      {segmentStatus === "segmenting" && (
+        <p className="text-sm text-neutral-400">Segmenting…</p>
+      )}
+      {segmentStatus === "error" && (
+        <p className="text-sm text-red-400">Segmenting failed.</p>
+      )}
+      {chunks && (
+        <ul className="max-w-md text-center text-sm text-neutral-200">
+          {chunks.map((chunk, i) => (
+            <li key={i}>
+              chunk {i}: offset {chunk.offsetMs}ms, duration {chunk.durationMs}
+              ms
+            </li>
+          ))}
+        </ul>
       )}
     </main>
   );
