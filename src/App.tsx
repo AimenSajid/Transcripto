@@ -1,9 +1,23 @@
 import { useEffect, useState } from "react";
+import type { TranscribeChunkResponse } from "../shared/types";
 
 type HealthStatus = "checking" | "ok" | "error";
+type TranscribeStatus = "idle" | "transcribing" | "done" | "error";
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+}
 
 function App() {
   const [status, setStatus] = useState<HealthStatus>("checking");
+  const [transcribeStatus, setTranscribeStatus] =
+    useState<TranscribeStatus>("idle");
+  const [result, setResult] = useState<TranscribeChunkResponse | null>(null);
 
   useEffect(() => {
     fetch("/api/health")
@@ -11,6 +25,31 @@ function App() {
       .then(() => setStatus("ok"))
       .catch(() => setStatus("error"));
   }, []);
+
+  async function transcribeSample() {
+    setTranscribeStatus("transcribing");
+    setResult(null);
+    try {
+      const audioBuffer = await fetch("/sample.wav").then((res) =>
+        res.arrayBuffer(),
+      );
+      const res = await fetch("/api/transcribe/chunk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audio: arrayBufferToBase64(audioBuffer),
+          offsetMs: 0,
+          durationMs: 4000,
+        }),
+      });
+      if (!res.ok) throw new Error(`transcribe failed: ${res.status}`);
+      const data = (await res.json()) as TranscribeChunkResponse;
+      setResult(data);
+      setTranscribeStatus("done");
+    } catch {
+      setTranscribeStatus("error");
+    }
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-neutral-950 text-neutral-100">
@@ -29,6 +68,26 @@ function App() {
           {status}
         </span>
       </p>
+
+      <button
+        onClick={transcribeSample}
+        disabled={transcribeStatus === "transcribing"}
+        className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
+      >
+        {transcribeStatus === "transcribing"
+          ? "Transcribing…"
+          : "Transcribe sample clip"}
+      </button>
+
+      {transcribeStatus === "error" && (
+        <p className="text-sm text-red-400">Transcription failed.</p>
+      )}
+
+      {result && (
+        <p className="max-w-md text-center text-sm text-neutral-200">
+          {result.text}
+        </p>
+      )}
     </main>
   );
 }
