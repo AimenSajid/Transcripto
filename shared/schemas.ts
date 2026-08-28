@@ -17,3 +17,22 @@ export const transcribeChunkResponseSchema = z.object({
   segments: z.array(segmentSchema),
   text: z.string(),
 });
+
+export const userSchema = z.object({
+  id: z.number(),
+  email: z.string().nullable(),
+  name: z.string().nullable(),
+  picture: z.string().nullable(),
+});
+
+export const googleAuthRequestSchema = z.object({
+  credential: z.string().min(1),
+});
+
+export const authResponseSchema = z.object({
+  user: userSchema,
+});
+
+export const meResponseSchema = z.object({
+  user: userSchema.nullable(),
+});

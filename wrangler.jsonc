@@ -13,5 +13,12 @@
   },
   "ai": {
     "binding": "AI"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "transcripto-db",
+      "database_id": "36d7641e-1f97-4577-b30f-37f49541ef61"
+    }
+  ]
 }
