@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { arrayBufferToBase64 } from "../audio/wav";
+import { validateAudioFile } from "../audio/validate";
 import { createTranscript } from "../api/transcripts";
 import { useTranscription } from "../transcription/useTranscription";
 import { ProgressBar } from "../components/ProgressBar";
@@ -21,6 +22,7 @@ export function Home() {
   const auth = useAuth();
   const navigate = useNavigate();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [fileError, setFileError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/health")
@@ -135,17 +137,26 @@ export function Home() {
             Transcribe an audio file
             <input
               type="file"
-              accept="audio/*"
+              accept=".mp3,.wav,.m4a,.ogg,.flac,.webm"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) {
-                  setSaveStatus("idle");
-                  void pipeline.run(file);
+                if (!file) return;
+
+                const error = validateAudioFile(file);
+                if (error) {
+                  setFileError(error);
+                  return;
                 }
+
+                setFileError(null);
+                setSaveStatus("idle");
+                void pipeline.run(file);
               }}
               className="text-xs"
             />
           </label>
+
+          {fileError && <p className="text-sm text-red-400">{fileError}</p>}
 
           {pipeline.status === "segmenting" && (
             <p className="text-sm text-neutral-400">Splitting audio…</p>
