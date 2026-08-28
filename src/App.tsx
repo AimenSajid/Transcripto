@@ -1,19 +1,18 @@
 import { useEffect, useState } from "react";
 import { arrayBufferToBase64 } from "./audio/wav";
-import { segmentAudioFile } from "./audio";
-import type { ChunkResult, TranscribeChunkResponse } from "../shared/types";
+import { useTranscription } from "./transcription/useTranscription";
+import { ProgressBar } from "./components/ProgressBar";
+import type { TranscribeChunkResponse } from "../shared/types";
 
 type HealthStatus = "checking" | "ok" | "error";
 type TranscribeStatus = "idle" | "transcribing" | "done" | "error";
-type SegmentStatus = "idle" | "segmenting" | "done" | "error";
 
 function App() {
   const [status, setStatus] = useState<HealthStatus>("checking");
   const [transcribeStatus, setTranscribeStatus] =
     useState<TranscribeStatus>("idle");
   const [result, setResult] = useState<TranscribeChunkResponse | null>(null);
-  const [segmentStatus, setSegmentStatus] = useState<SegmentStatus>("idle");
-  const [chunks, setChunks] = useState<ChunkResult[] | null>(null);
+  const pipeline = useTranscription();
 
   useEffect(() => {
     fetch("/api/health")
@@ -44,18 +43,6 @@ function App() {
       setTranscribeStatus("done");
     } catch {
       setTranscribeStatus("error");
-    }
-  }
-
-  async function segmentFile(file: File) {
-    setSegmentStatus("segmenting");
-    setChunks(null);
-    try {
-      const result = await segmentAudioFile(file);
-      setChunks(result);
-      setSegmentStatus("done");
-    } catch {
-      setSegmentStatus("error");
     }
   }
 
@@ -98,33 +85,31 @@ function App() {
       )}
 
       <label className="flex flex-col items-center gap-2 text-sm text-neutral-400">
-        Segment an audio file
+        Transcribe an audio file
         <input
           type="file"
           accept="audio/*"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) void segmentFile(file);
+            if (file) void pipeline.run(file);
           }}
           className="text-xs"
         />
       </label>
 
-      {segmentStatus === "segmenting" && (
-        <p className="text-sm text-neutral-400">Segmenting…</p>
+      {pipeline.status === "segmenting" && (
+        <p className="text-sm text-neutral-400">Splitting audio…</p>
       )}
-      {segmentStatus === "error" && (
-        <p className="text-sm text-red-400">Segmenting failed.</p>
+      {pipeline.status === "transcribing" && (
+        <ProgressBar done={pipeline.progress.done} total={pipeline.progress.total} />
       )}
-      {chunks && (
-        <ul className="max-w-md text-center text-sm text-neutral-200">
-          {chunks.map((chunk, i) => (
-            <li key={i}>
-              chunk {i}: offset {chunk.offsetMs}ms, duration {chunk.durationMs}
-              ms
-            </li>
-          ))}
-        </ul>
+      {pipeline.status === "error" && (
+        <p className="text-sm text-red-400">{pipeline.error}</p>
+      )}
+      {pipeline.status === "done" && pipeline.transcript && (
+        <p className="max-w-md text-center text-sm text-neutral-200">
+          {pipeline.transcript.text}
+        </p>
       )}
     </main>
   );
