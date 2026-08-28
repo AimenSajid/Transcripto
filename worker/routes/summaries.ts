@@ -1,9 +1,7 @@
 import { Hono } from "hono";
 import * as queries from "../db/queries";
-import { generateSummary } from "../services/summarizer";
+import { generateSummary, SUMMARY_MODEL } from "../services/summarizer";
 import type { DbUser } from "../types";
-
-const SUMMARY_MODEL = "@cf/openai/gpt-oss-20b";
 
 const summaries = new Hono<{ Bindings: Env; Variables: { user: DbUser } }>();
 

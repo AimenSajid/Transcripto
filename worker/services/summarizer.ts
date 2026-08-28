@@ -2,6 +2,8 @@ import { summarySchema } from "../../shared/schemas";
 import type { Summary } from "../../shared/types";
 import { buildSummaryPrompt, SUMMARY_SYSTEM_PROMPT } from "../prompts/summary";
 
+export const SUMMARY_MODEL = "@cf/openai/gpt-oss-20b";
+
 function extractJson(raw: string): unknown {
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}");
@@ -18,7 +20,7 @@ async function requestSummary(
   ai: Ai,
   transcriptText: string,
 ): Promise<Summary | null> {
-  const output = await ai.run("@cf/openai/gpt-oss-20b", {
+  const output = await ai.run(SUMMARY_MODEL, {
     messages: [
       { role: "system", content: SUMMARY_SYSTEM_PROMPT },
       { role: "user", content: buildSummaryPrompt(transcriptText) },

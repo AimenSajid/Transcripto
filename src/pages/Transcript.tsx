@@ -75,7 +75,7 @@ export function Transcript() {
 
           <ExportMenu transcriptId={transcript.id} title={transcript.title} />
 
-          <SummaryPanel transcriptId={transcript.id} />
+          <SummaryPanel transcriptId={transcript.id} title={transcript.title} />
 
           <ul className="flex flex-col gap-2">
             {transcript.segments.map((segment, i) => (

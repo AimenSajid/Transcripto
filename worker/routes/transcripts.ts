@@ -3,9 +3,11 @@ import {
   createTranscriptRequestSchema,
   updateTranscriptRequestSchema,
 } from "../../shared/schemas";
+import * as queries from "../db/queries";
 import { toMarkdown } from "../export/markdown";
 import { toSrt } from "../export/srt";
 import { toVtt } from "../export/vtt";
+import { generateSummary, SUMMARY_MODEL } from "../services/summarizer";
 import * as transcriptsService from "../services/transcripts";
 import type { DbUser } from "../types";
 
@@ -61,6 +63,16 @@ transcripts.post("/", async (c) => {
     user.id,
     parsed.data,
   );
+
+  if (transcript.text.trim().length > 0) {
+    try {
+      const summary = await generateSummary(c.env.AI, transcript.text);
+      await queries.upsertSummary(c.env.DB, transcript.id, SUMMARY_MODEL, summary);
+    } catch {
+      // Best-effort: a failed auto-summary must not fail the transcript save.
+      // The user can still generate one manually from the transcript page.
+    }
+  }
 
   return c.json({ transcript }, 201);
 });

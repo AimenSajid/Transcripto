@@ -1,12 +1,43 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { generateSummary } from "../api/summaries";
+import { downloadBlob } from "../lib/download";
 import type { Summary } from "../../shared/types";
 
-type Status = "idle" | "loading" | "error";
+type Status = "loading" | "idle" | "error";
 
-export function SummaryPanel({ transcriptId }: { transcriptId: number }) {
+function formatSummaryForDownload(summary: Summary): string {
+  const lines = [summary.summary, ""];
+
+  if (summary.keyPoints.length > 0) {
+    lines.push("Key Points:", ...summary.keyPoints.map((p) => `- ${p}`), "");
+  }
+  if (summary.actionItems.length > 0) {
+    lines.push("Action Items:", ...summary.actionItems.map((a) => `- ${a}`));
+  }
+
+  return `${lines.join("\n").trim()}\n`;
+}
+
+export function SummaryPanel({
+  transcriptId,
+  title = "summary",
+}: {
+  transcriptId: number;
+  title?: string;
+}) {
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [status, setStatus] = useState<Status>("idle");
+  const [status, setStatus] = useState<Status>("loading");
+
+  useEffect(() => {
+    setStatus("loading");
+    setSummary(null);
+    generateSummary(transcriptId, false)
+      .then((result) => {
+        setSummary(result);
+        setStatus("idle");
+      })
+      .catch(() => setStatus("error"));
+  }, [transcriptId]);
 
   async function handleGenerate(regenerate: boolean) {
     setStatus("loading");
@@ -19,21 +50,39 @@ export function SummaryPanel({ transcriptId }: { transcriptId: number }) {
     }
   }
 
+  function handleDownload() {
+    if (!summary) return;
+    const blob = new Blob([formatSummaryForDownload(summary)], {
+      type: "text/plain",
+    });
+    downloadBlob(blob, `${title}-summary.txt`);
+  }
+
   return (
     <div className="flex w-full flex-col gap-2 rounded bg-neutral-900 p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-neutral-200">Summary</h2>
-        <button
-          onClick={() => void handleGenerate(summary !== null)}
-          disabled={status === "loading"}
-          className="text-xs text-neutral-400 underline disabled:opacity-50"
-        >
-          {status === "loading"
-            ? "Generating…"
-            : summary
-              ? "Regenerate"
-              : "Generate summary"}
-        </button>
+        <div className="flex items-center gap-3">
+          {summary && (
+            <button
+              onClick={handleDownload}
+              className="text-xs text-neutral-400 underline"
+            >
+              Download
+            </button>
+          )}
+          <button
+            onClick={() => void handleGenerate(summary !== null)}
+            disabled={status === "loading"}
+            className="text-xs text-neutral-400 underline disabled:opacity-50"
+          >
+            {status === "loading"
+              ? "Generating…"
+              : summary
+                ? "Regenerate"
+                : "Generate summary"}
+          </button>
+        </div>
       </div>
 
       {status === "error" && (
