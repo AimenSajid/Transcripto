@@ -80,3 +80,9 @@ export const quotaResponseSchema = z.object({
   remainingMs: z.number(),
   resetsAt: z.number(),
 });
+
+export const summarySchema = z.object({
+  summary: z.string(),
+  keyPoints: z.array(z.string()),
+  actionItems: z.array(z.string()),
+});

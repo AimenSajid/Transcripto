@@ -7,6 +7,7 @@ import type {
   meResponseSchema,
   quotaResponseSchema,
   segmentSchema,
+  summarySchema,
   transcribeChunkRequestSchema,
   transcribeChunkResponseSchema,
   transcriptResponseSchema,
@@ -30,6 +31,7 @@ export type UpdateTranscriptRequest = z.infer<typeof updateTranscriptRequestSche
 export type ListTranscriptsResponse = z.infer<typeof listTranscriptsResponseSchema>;
 export type TranscriptResponse = z.infer<typeof transcriptResponseSchema>;
 export type QuotaResponse = z.infer<typeof quotaResponseSchema>;
+export type Summary = z.infer<typeof summarySchema>;
 
 export interface ChunkResult {
   audioBase64: string;

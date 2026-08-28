@@ -1,6 +1,11 @@
 import type { GoogleIdentity } from "../services/google";
 import type { DbUser } from "../types";
-import type { Segment, Transcript, TranscriptSummary } from "../../shared/types";
+import type {
+  Segment,
+  Summary,
+  Transcript,
+  TranscriptSummary,
+} from "../../shared/types";
 
 interface UserRow {
   id: number;
@@ -265,5 +270,59 @@ export async function addUsageForDay(
          ai_calls = ai_calls + 1`,
     )
     .bind(userId, day, audioMs)
+    .run();
+}
+
+interface SummaryRow {
+  summary: string;
+  key_points: string;
+  action_items: string;
+}
+
+export async function getSummaryForTranscript(
+  db: D1Database,
+  transcriptId: number,
+): Promise<Summary | null> {
+  const row = await db
+    .prepare(
+      `SELECT summary, key_points, action_items FROM summaries WHERE transcript_id = ?`,
+    )
+    .bind(transcriptId)
+    .first<SummaryRow>();
+
+  if (!row) return null;
+
+  return {
+    summary: row.summary,
+    keyPoints: JSON.parse(row.key_points) as string[],
+    actionItems: JSON.parse(row.action_items) as string[],
+  };
+}
+
+export async function upsertSummary(
+  db: D1Database,
+  transcriptId: number,
+  model: string,
+  summary: Summary,
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO summaries (transcript_id, model, summary, key_points, action_items, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(transcript_id) DO UPDATE SET
+         model = excluded.model,
+         summary = excluded.summary,
+         key_points = excluded.key_points,
+         action_items = excluded.action_items,
+         created_at = excluded.created_at`,
+    )
+    .bind(
+      transcriptId,
+      model,
+      summary.summary,
+      JSON.stringify(summary.keyPoints),
+      JSON.stringify(summary.actionItems),
+      Date.now(),
+    )
     .run();
 }

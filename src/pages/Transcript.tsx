@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { deleteTranscript, getTranscript, renameTranscript } from "../api/transcripts";
 import { formatTimestamp } from "../lib/format";
+import { SummaryPanel } from "../components/SummaryPanel";
 import type { Transcript as TranscriptType } from "../../shared/types";
 
 type LoadStatus = "loading" | "done" | "error";
@@ -70,6 +71,8 @@ export function Transcript() {
               Delete
             </button>
           </div>
+
+          <SummaryPanel transcriptId={transcript.id} />
 
           <ul className="flex flex-col gap-2">
             {transcript.segments.map((segment, i) => (
