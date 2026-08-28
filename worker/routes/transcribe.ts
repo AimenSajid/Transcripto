@@ -1,10 +1,16 @@
 import { Hono } from "hono";
 import { transcribeChunkRequestSchema } from "../../shared/schemas";
-import { getQuotaStatus, recordUsage } from "../services/quota";
+import { getClientIp } from "../lib/clientIp";
+import {
+  getQuotaStatus,
+  getQuotaStatusForIp,
+  recordUsage,
+  recordUsageForIp,
+} from "../services/quota";
 import { transcribeChunk } from "../services/speech";
 import type { DbUser } from "../types";
 
-const transcribe = new Hono<{ Bindings: Env; Variables: { user: DbUser } }>();
+const transcribe = new Hono<{ Bindings: Env; Variables: { user?: DbUser } }>();
 
 transcribe.post("/chunk", async (c) => {
   const body = await c.req.json().catch(() => null);
@@ -17,7 +23,10 @@ transcribe.post("/chunk", async (c) => {
   const user = c.get("user");
   const { audio, offsetMs, durationMs, language } = parsed.data;
 
-  const quota = await getQuotaStatus(c.env.DB, user.id);
+  const quota = user
+    ? await getQuotaStatus(c.env.DB, user.id)
+    : await getQuotaStatusForIp(c.env.DB, getClientIp(c));
+
   if (durationMs > quota.remainingMs) {
     return c.json(
       { error: "Daily transcription quota exceeded", code: "quota_exceeded" },
@@ -31,7 +40,11 @@ transcribe.post("/chunk", async (c) => {
     language,
   });
 
-  await recordUsage(c.env.DB, user.id, durationMs);
+  if (user) {
+    await recordUsage(c.env.DB, user.id, durationMs);
+  } else {
+    await recordUsageForIp(c.env.DB, getClientIp(c), durationMs);
+  }
 
   return c.json(result);
 });

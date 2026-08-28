@@ -112,85 +112,87 @@ export function Home() {
         </div>
       )}
 
-      {auth.status === "signed-in" && (
-        <>
-          <QuotaBadge refreshKey={pipeline.status} />
+      <QuotaBadge refreshKey={pipeline.status} />
 
-          <button
-            onClick={transcribeSample}
-            disabled={transcribeStatus === "transcribing"}
-            className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
-          >
-            {transcribeStatus === "transcribing"
-              ? "Transcribing…"
-              : "Transcribe sample clip"}
-          </button>
+      <button
+        onClick={transcribeSample}
+        disabled={transcribeStatus === "transcribing"}
+        className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
+      >
+        {transcribeStatus === "transcribing"
+          ? "Transcribing…"
+          : "Transcribe sample clip"}
+      </button>
 
-          {transcribeStatus === "error" && (
-            <p className="text-sm text-red-400">Transcription failed.</p>
-          )}
+      {transcribeStatus === "error" && (
+        <p className="text-sm text-red-400">Transcription failed.</p>
+      )}
 
-          {result && (
-            <p className="max-w-md text-center text-sm text-neutral-200">
-              {result.text}
+      {result && (
+        <p className="max-w-md text-center text-sm text-neutral-200">
+          {result.text}
+        </p>
+      )}
+
+      <label className="flex flex-col items-center gap-2 text-sm text-neutral-400">
+        Transcribe an audio file
+        <input
+          type="file"
+          accept=".mp3,.wav,.m4a,.ogg,.flac,.webm"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            const error = validateAudioFile(file);
+            if (error) {
+              setFileError(error);
+              return;
+            }
+
+            setFileError(null);
+            setSaveStatus("idle");
+            void pipeline.run(file);
+          }}
+          className="text-xs"
+        />
+      </label>
+
+      {fileError && <p className="text-sm text-red-400">{fileError}</p>}
+
+      {pipeline.status === "segmenting" && (
+        <p className="text-sm text-neutral-400">Splitting audio…</p>
+      )}
+      {pipeline.status === "transcribing" && (
+        <ProgressBar
+          done={pipeline.progress.done}
+          total={pipeline.progress.total}
+        />
+      )}
+      {pipeline.status === "error" && (
+        <p className="text-sm text-red-400">{pipeline.error}</p>
+      )}
+      {pipeline.status === "done" && pipeline.completed && (
+        <div className="flex max-w-md flex-col items-center gap-2">
+          <p className="text-center text-sm text-neutral-200">
+            {pipeline.completed.result.text}
+          </p>
+          {auth.status === "signed-in" ? (
+            <button
+              onClick={() => void saveTranscript()}
+              disabled={saveStatus === "saving"}
+              className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
+            >
+              {saveStatus === "saving" ? "Saving…" : "Save transcript"}
+            </button>
+          ) : (
+            <p className="text-xs text-neutral-400">
+              Sign in to save this transcript and get an AI summary.
             </p>
           )}
-
-          <label className="flex flex-col items-center gap-2 text-sm text-neutral-400">
-            Transcribe an audio file
-            <input
-              type="file"
-              accept=".mp3,.wav,.m4a,.ogg,.flac,.webm"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-
-                const error = validateAudioFile(file);
-                if (error) {
-                  setFileError(error);
-                  return;
-                }
-
-                setFileError(null);
-                setSaveStatus("idle");
-                void pipeline.run(file);
-              }}
-              className="text-xs"
-            />
-          </label>
-
-          {fileError && <p className="text-sm text-red-400">{fileError}</p>}
-
-          {pipeline.status === "segmenting" && (
-            <p className="text-sm text-neutral-400">Splitting audio…</p>
+          {saveStatus === "error" && (
+            <p className="text-sm text-red-400">Failed to save transcript.</p>
           )}
-          {pipeline.status === "transcribing" && (
-            <ProgressBar
-              done={pipeline.progress.done}
-              total={pipeline.progress.total}
-            />
-          )}
-          {pipeline.status === "error" && (
-            <p className="text-sm text-red-400">{pipeline.error}</p>
-          )}
-          {pipeline.status === "done" && pipeline.completed && (
-            <div className="flex max-w-md flex-col items-center gap-2">
-              <p className="text-center text-sm text-neutral-200">
-                {pipeline.completed.result.text}
-              </p>
-              <button
-                onClick={() => void saveTranscript()}
-                disabled={saveStatus === "saving"}
-                className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
-              >
-                {saveStatus === "saving" ? "Saving…" : "Save transcript"}
-              </button>
-              {saveStatus === "error" && (
-                <p className="text-sm text-red-400">Failed to save transcript.</p>
-              )}
-            </div>
-          )}
-        </>
+        </div>
       )}
     </main>
   );

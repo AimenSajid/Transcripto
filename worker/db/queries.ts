@@ -273,6 +273,37 @@ export async function addUsageForDay(
     .run();
 }
 
+export async function getAnonUsageMsForDay(
+  db: D1Database,
+  ip: string,
+  day: string,
+): Promise<number> {
+  const row = await db
+    .prepare(`SELECT audio_ms FROM anon_usage_ledger WHERE ip = ? AND day = ?`)
+    .bind(ip, day)
+    .first<{ audio_ms: number }>();
+
+  return row?.audio_ms ?? 0;
+}
+
+export async function addAnonUsageForDay(
+  db: D1Database,
+  ip: string,
+  day: string,
+  audioMs: number,
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO anon_usage_ledger (ip, day, audio_ms, ai_calls)
+       VALUES (?, ?, ?, 1)
+       ON CONFLICT(ip, day) DO UPDATE SET
+         audio_ms = audio_ms + excluded.audio_ms,
+         ai_calls = ai_calls + 1`,
+    )
+    .bind(ip, day, audioMs)
+    .run();
+}
+
 interface SummaryRow {
   summary: string;
   key_points: string;

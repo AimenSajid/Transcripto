@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { DAILY_QUOTA_MS } from "../../shared/constants";
-import { getQuotaStatus } from "../../worker/services/quota";
+import { getQuotaStatus, getQuotaStatusForIp } from "../../worker/services/quota";
 
 function fakeDb(usedMs: number | null) {
   const first = vi.fn().mockResolvedValue(usedMs === null ? null : { audio_ms: usedMs });
@@ -35,5 +35,20 @@ describe("getQuotaStatus", () => {
     expect(resets.getUTCHours()).toBe(0);
     expect(resets.getUTCMinutes()).toBe(0);
     expect(resets.getTime()).toBeGreaterThan(Date.now());
+  });
+});
+
+describe("getQuotaStatusForIp", () => {
+  it("uses the same daily cap as signed-in users", async () => {
+    const status = await getQuotaStatusForIp(fakeDb(null), "203.0.113.1");
+    expect(status.limitMs).toBe(DAILY_QUOTA_MS);
+    expect(status.remainingMs).toBe(DAILY_QUOTA_MS);
+  });
+
+  it("subtracts IP-tracked usage from the limit", async () => {
+    const usedMs = 10 * 60 * 1000;
+    const status = await getQuotaStatusForIp(fakeDb(usedMs), "203.0.113.1");
+    expect(status.usedMs).toBe(usedMs);
+    expect(status.remainingMs).toBe(DAILY_QUOTA_MS - usedMs);
   });
 });
