@@ -16,10 +16,16 @@ export interface TranscriptionProgress {
   total: number;
 }
 
+export interface CompletedTranscription {
+  result: TranscribeChunkResponse;
+  fileName: string;
+  durationMs: number;
+}
+
 export interface UseTranscriptionResult {
   status: TranscriptionStatus;
   progress: TranscriptionProgress;
-  transcript: TranscribeChunkResponse | null;
+  completed: CompletedTranscription | null;
   error: string | null;
   run: (file: File) => Promise<void>;
 }
@@ -30,14 +36,14 @@ export function useTranscription(): UseTranscriptionResult {
     done: 0,
     total: 0,
   });
-  const [transcript, setTranscript] = useState<TranscribeChunkResponse | null>(
+  const [completed, setCompleted] = useState<CompletedTranscription | null>(
     null,
   );
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(async (file: File) => {
     setStatus("segmenting");
-    setTranscript(null);
+    setCompleted(null);
     setError(null);
     setProgress({ done: 0, total: 0 });
 
@@ -53,7 +59,12 @@ export function useTranscription(): UseTranscriptionResult {
         },
       });
 
-      setTranscript(stitchTranscripts(responses));
+      const durationMs = chunks.reduce((sum, chunk) => sum + chunk.durationMs, 0);
+      setCompleted({
+        result: stitchTranscripts(responses),
+        fileName: file.name,
+        durationMs,
+      });
       setStatus("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Transcription failed");
@@ -61,5 +72,5 @@ export function useTranscription(): UseTranscriptionResult {
     }
   }, []);
 
-  return { status, progress, transcript, error, run };
+  return { status, progress, completed, error, run };
 }
