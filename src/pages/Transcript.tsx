@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { deleteTranscript, getTranscript, renameTranscript } from "../api/transcripts";
 import { formatTimestamp } from "../lib/format";
 import { SummaryPanel } from "../components/SummaryPanel";
+import { ExportMenu } from "../components/ExportMenu";
 import type { Transcript as TranscriptType } from "../../shared/types";
 
 type LoadStatus = "loading" | "done" | "error";
@@ -71,6 +72,8 @@ export function Transcript() {
               Delete
             </button>
           </div>
+
+          <ExportMenu transcriptId={transcript.id} title={transcript.title} />
 
           <SummaryPanel transcriptId={transcript.id} />
 

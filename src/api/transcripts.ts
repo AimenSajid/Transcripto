@@ -55,3 +55,14 @@ export async function deleteTranscript(id: number): Promise<void> {
     throw new Error(`Failed to delete transcript: ${res.status}`);
   }
 }
+
+export type ExportFormat = "txt" | "srt" | "vtt" | "md";
+
+export async function exportTranscript(
+  id: number,
+  format: ExportFormat,
+): Promise<Blob> {
+  const res = await fetch(`/api/transcripts/${id}/export?format=${format}`);
+  if (!res.ok) throw new Error(`Failed to export transcript: ${res.status}`);
+  return res.blob();
+}
