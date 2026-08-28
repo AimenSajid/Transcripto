@@ -5,6 +5,7 @@ import { validateAudioFile } from "../audio/validate";
 import { createTranscript } from "../api/transcripts";
 import { useTranscription } from "../transcription/useTranscription";
 import { ProgressBar } from "../components/ProgressBar";
+import { QuotaBadge } from "../components/QuotaBadge";
 import { GoogleSignIn } from "../components/GoogleSignIn";
 import { useAuth } from "../context/AuthContext";
 import type { TranscribeChunkResponse } from "../../shared/types";
@@ -113,6 +114,8 @@ export function Home() {
 
       {auth.status === "signed-in" && (
         <>
+          <QuotaBadge refreshKey={pipeline.status} />
+
           <button
             onClick={transcribeSample}
             disabled={transcribeStatus === "transcribing"}

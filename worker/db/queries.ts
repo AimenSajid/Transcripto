@@ -236,3 +236,34 @@ export async function deleteTranscriptForUser(
 
   return (result.meta.changes ?? 0) > 0;
 }
+
+export async function getUsageMsForDay(
+  db: D1Database,
+  userId: number,
+  day: string,
+): Promise<number> {
+  const row = await db
+    .prepare(`SELECT audio_ms FROM usage_ledger WHERE user_id = ? AND day = ?`)
+    .bind(userId, day)
+    .first<{ audio_ms: number }>();
+
+  return row?.audio_ms ?? 0;
+}
+
+export async function addUsageForDay(
+  db: D1Database,
+  userId: number,
+  day: string,
+  audioMs: number,
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO usage_ledger (user_id, day, audio_ms, ai_calls)
+       VALUES (?, ?, ?, 1)
+       ON CONFLICT(user_id, day) DO UPDATE SET
+         audio_ms = audio_ms + excluded.audio_ms,
+         ai_calls = ai_calls + 1`,
+    )
+    .bind(userId, day, audioMs)
+    .run();
+}

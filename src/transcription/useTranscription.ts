@@ -1,8 +1,13 @@
 import { useCallback, useState } from "react";
+import { fetchQuota } from "../api/quota";
 import { segmentAudioFile } from "../audio";
 import { transcribeChunks } from "./pipeline";
 import { stitchTranscripts } from "./stitch";
 import type { TranscribeChunkResponse } from "../../shared/types";
+
+function formatMinutes(ms: number): string {
+  return `${Math.ceil(ms / 60000)} min`;
+}
 
 export type TranscriptionStatus =
   | "idle"
@@ -49,6 +54,17 @@ export function useTranscription(): UseTranscriptionResult {
 
     try {
       const chunks = await segmentAudioFile(file);
+      const durationMs = chunks.reduce((sum, chunk) => sum + chunk.durationMs, 0);
+
+      const quota = await fetchQuota();
+      if (durationMs > quota.remainingMs) {
+        setError(
+          `This file is ${formatMinutes(durationMs)}, but you only have ${formatMinutes(quota.remainingMs)} left today.`,
+        );
+        setStatus("error");
+        return;
+      }
+
       setStatus("transcribing");
       setProgress({ done: 0, total: chunks.length });
 
@@ -59,7 +75,6 @@ export function useTranscription(): UseTranscriptionResult {
         },
       });
 
-      const durationMs = chunks.reduce((sum, chunk) => sum + chunk.durationMs, 0);
       setCompleted({
         result: stitchTranscripts(responses),
         fileName: file.name,

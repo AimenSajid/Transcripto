@@ -73,3 +73,10 @@ export const listTranscriptsResponseSchema = z.object({
 export const transcriptResponseSchema = z.object({
   transcript: transcriptSchema,
 });
+
+export const quotaResponseSchema = z.object({
+  usedMs: z.number(),
+  limitMs: z.number(),
+  remainingMs: z.number(),
+  resetsAt: z.number(),
+});

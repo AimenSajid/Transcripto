@@ -5,6 +5,7 @@ import type {
   googleAuthRequestSchema,
   listTranscriptsResponseSchema,
   meResponseSchema,
+  quotaResponseSchema,
   segmentSchema,
   transcribeChunkRequestSchema,
   transcribeChunkResponseSchema,
@@ -28,6 +29,7 @@ export type CreateTranscriptRequest = z.infer<typeof createTranscriptRequestSche
 export type UpdateTranscriptRequest = z.infer<typeof updateTranscriptRequestSchema>;
 export type ListTranscriptsResponse = z.infer<typeof listTranscriptsResponseSchema>;
 export type TranscriptResponse = z.infer<typeof transcriptResponseSchema>;
+export type QuotaResponse = z.infer<typeof quotaResponseSchema>;
 
 export interface ChunkResult {
   audioBase64: string;
