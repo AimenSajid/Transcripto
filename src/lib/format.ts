@@ -21,3 +21,27 @@ export function formatCountdown(untilMs: number): string {
   if (hours <= 0) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
   return `${hours} hour${hours === 1 ? "" : "s"} ${minutes} minute${minutes === 1 ? "" : "s"}`;
 }
+
+interface RowMetaSource {
+  createdAt: number;
+  durationMs: number;
+  sourceFilename: string | null;
+  language: string | null;
+}
+
+/** Dot-separated row metadata: "May 20, 2024 · 14:08 · MP3 · English". */
+export function formatRowMeta(t: RowMetaSource): string {
+  const date = new Date(t.createdAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const duration = formatTimestamp(t.durationMs);
+  const extension = t.sourceFilename?.split(".").pop()?.toUpperCase();
+
+  const parts = [date, duration];
+  if (extension) parts.push(extension);
+  parts.push(t.language ?? "Auto-detected");
+
+  return parts.join(" · ");
+}

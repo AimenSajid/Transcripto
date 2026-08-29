@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { validateAudioFile } from "../audio/validate";
-import { createTranscript } from "../api/transcripts";
+import { createTranscript, listTranscripts } from "../api/transcripts";
 import { fetchQuota } from "../api/quota";
 import { useTranscription } from "../transcription/useTranscription";
 import { ProgressBar } from "../components/ProgressBar";
 import { Dropzone } from "../components/ui/Dropzone";
 import { LimitReachedCard } from "../components/LimitReachedCard";
 import { FileErrorCard } from "../components/FileErrorCard";
+import { FeatureCard } from "../components/ui/FeatureCard";
+import { TranscriptionRow } from "../components/TranscriptionRow";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
+import { formatRowMeta } from "../lib/format";
 import { useAuth } from "../context/AuthContext";
-import type { QuotaResponse } from "../../shared/types";
+import type { QuotaResponse, TranscriptSummary } from "../../shared/types";
+
+const RECENT_LIMIT = 3;
 
 type SaveStatus = "idle" | "saving" | "error";
 
@@ -20,12 +27,20 @@ export function Home() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [fileError, setFileError] = useState<string | null>(null);
   const [quota, setQuota] = useState<QuotaResponse | null>(null);
+  const [recent, setRecent] = useState<TranscriptSummary[]>([]);
 
   useEffect(() => {
     fetchQuota()
       .then(setQuota)
       .catch(() => setQuota(null));
   }, [pipeline.status]);
+
+  useEffect(() => {
+    if (auth.status !== "signed-in") return;
+    listTranscripts({ limit: RECENT_LIMIT })
+      .then((res) => setRecent(res.items))
+      .catch(() => setRecent([]));
+  }, [auth.status, pipeline.status]);
 
   function handleFile(file: File) {
     const error = validateAudioFile(file);
@@ -162,6 +177,94 @@ export function Home() {
             {saveStatus === "error" && (
               <p className="text-sm text-red-400">Failed to save transcript.</p>
             )}
+          </div>
+        )}
+
+        {idle && isGuest && (
+          <Card padding="26px">
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span
+                  style={{
+                    font: "var(--fw-semibold) var(--text-xs)/1 var(--font-body)",
+                    letterSpacing: "var(--ls-caps)",
+                    textTransform: "uppercase",
+                    color: "var(--text-subtle)",
+                  }}
+                >
+                  With a free account
+                </span>
+                <div style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+                <FeatureCard
+                  icon="file-text"
+                  title="Saved history"
+                  body="Every transcript kept in your account"
+                />
+                <FeatureCard
+                  icon="lightbulb"
+                  title="AI summaries"
+                  body="Overview, key points, and action items"
+                />
+                <FeatureCard
+                  icon="cloud-download"
+                  title="Export anywhere"
+                  body="TXT, SRT, VTT and Markdown"
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <Button onClick={() => navigate("/login")}>Get Started Free</Button>
+                <span
+                  style={{
+                    font: "var(--fw-regular) var(--text-sm)/1.4 var(--font-body)",
+                    color: "var(--text-subtle)",
+                  }}
+                >
+                  30 minutes of transcription a day. No card needed.
+                </span>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {idle && !isGuest && recent.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+              <h2
+                style={{
+                  font: "var(--fw-bold) var(--text-h3)/1.3 var(--font-display)",
+                  letterSpacing: "var(--ls-heading)",
+                  color: "var(--text-strong)",
+                  margin: 0,
+                }}
+              >
+                Recent
+              </h2>
+              <Link
+                to="/history"
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  font: "var(--type-label)",
+                  color: "var(--text-muted)",
+                  textDecoration: "none",
+                }}
+              >
+                View all
+              </Link>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {recent.map((t) => (
+                <TranscriptionRow
+                  key={t.id}
+                  name={t.title}
+                  meta={formatRowMeta(t)}
+                  onClick={() => navigate(`/transcripts/${t.id}`)}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -17,13 +17,22 @@ export async function createTranscript(
   return data.transcript;
 }
 
+export interface ListTranscriptsOptions {
+  cursor?: string;
+  limit?: number;
+  q?: string;
+}
+
 export async function listTranscripts(
-  cursor?: string,
+  options: ListTranscriptsOptions = {},
 ): Promise<ListTranscriptsResponse> {
-  const url = cursor
-    ? `/api/transcripts?cursor=${encodeURIComponent(cursor)}`
-    : "/api/transcripts";
-  const res = await fetch(url);
+  const params = new URLSearchParams();
+  if (options.cursor) params.set("cursor", options.cursor);
+  if (options.limit) params.set("limit", String(options.limit));
+  if (options.q) params.set("q", options.q);
+  const query = params.toString();
+
+  const res = await fetch(`/api/transcripts${query ? `?${query}` : ""}`);
   if (!res.ok) throw new Error(`Failed to list transcripts: ${res.status}`);
   return (await res.json()) as ListTranscriptsResponse;
 }
