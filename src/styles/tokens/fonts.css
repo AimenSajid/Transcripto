@@ -1,0 +1,5 @@
+/* Webfonts are loaded from Google Fonts (no binaries were supplied with the brand source).
+   Plus Jakarta Sans stands in for the inspiration's geometric display sans;
+   JetBrains Mono stands in for its tabular timecode face. See readme.md > Fonts. */
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
+:root{--font-display:"Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;--font-body:"Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace}
