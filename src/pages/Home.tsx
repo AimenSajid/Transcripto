@@ -12,15 +12,23 @@ import { FeatureCard } from "../components/ui/FeatureCard";
 import { TranscriptionRow } from "../components/TranscriptionRow";
 import { TranscriptDetailView } from "../components/TranscriptDetailView";
 import { LockedExportPanel } from "../components/LockedExportPanel";
+import { SummaryLockedPanel } from "../components/SummaryLockedPanel";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
+import { Tabs } from "../components/ui/Tabs";
+import { TranscriptLine } from "../components/ui/TranscriptLine";
 import { formatRowMeta, formatTimestamp } from "../lib/format";
 import { useAuth } from "../context/AuthContext";
 import type { QuotaResponse, TranscriptSummary } from "../../shared/types";
 
 const RECENT_LIMIT = 3;
+const GUEST_TABS = [
+  { id: "transcript", label: "Transcript" },
+  { id: "summary", label: "Summary (Locked)" },
+];
 
 type SaveStatus = "idle" | "saving" | "error";
+type GuestTabId = "transcript" | "summary";
 
 export function Home() {
   const pipeline = useTranscription();
@@ -31,6 +39,8 @@ export function Home() {
   const [quota, setQuota] = useState<QuotaResponse | null>(null);
   const [recent, setRecent] = useState<TranscriptSummary[]>([]);
   const [pendingFileName, setPendingFileName] = useState("");
+  const [guestTab, setGuestTab] = useState<GuestTabId>("transcript");
+  const [guestActiveIdx, setGuestActiveIdx] = useState<number | null>(null);
 
   useEffect(() => {
     fetchQuota()
@@ -172,9 +182,38 @@ export function Home() {
             copyText={pipeline.completed.result.text}
             exportSlot={<LockedExportPanel />}
           >
-            <p className="text-center text-sm" style={{ color: "var(--text-body)" }}>
-              {pipeline.completed.result.text}
-            </p>
+            <Tabs
+              tabs={GUEST_TABS}
+              value={guestTab}
+              onChange={(id) => setGuestTab(id as GuestTabId)}
+            />
+
+            {guestTab === "transcript" && (
+              <Card tone="sunken" padding="8px">
+                <div
+                  style={{
+                    maxHeight: 520,
+                    overflowY: "auto",
+                    padding: "10px 12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  {pipeline.completed.result.segments.map((segment, i) => (
+                    <TranscriptLine
+                      key={i}
+                      time={formatTimestamp(segment.startMs)}
+                      text={segment.text}
+                      active={guestActiveIdx === i}
+                      onClick={() => setGuestActiveIdx(i)}
+                    />
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {guestTab === "summary" && <SummaryLockedPanel />}
           </TranscriptDetailView>
         )}
         {pipeline.status === "done" && pipeline.completed && !isGuest && (
