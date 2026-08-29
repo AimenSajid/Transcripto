@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateAudioFile } from "../audio/validate";
 import { createTranscript } from "../api/transcripts";
+import { fetchQuota } from "../api/quota";
 import { useTranscription } from "../transcription/useTranscription";
 import { ProgressBar } from "../components/ProgressBar";
 import { Dropzone } from "../components/ui/Dropzone";
+import { LimitReachedCard } from "../components/LimitReachedCard";
+import { FileErrorCard } from "../components/FileErrorCard";
 import { useAuth } from "../context/AuthContext";
+import type { QuotaResponse } from "../../shared/types";
 
 type SaveStatus = "idle" | "saving" | "error";
 
@@ -15,6 +19,13 @@ export function Home() {
   const navigate = useNavigate();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [fileError, setFileError] = useState<string | null>(null);
+  const [quota, setQuota] = useState<QuotaResponse | null>(null);
+
+  useEffect(() => {
+    fetchQuota()
+      .then(setQuota)
+      .catch(() => setQuota(null));
+  }, [pipeline.status]);
 
   function handleFile(file: File) {
     const error = validateAudioFile(file);
@@ -48,11 +59,23 @@ export function Home() {
   }
 
   const isGuest = auth.status !== "signed-in";
-  const showDropzone = pipeline.status === "idle" || pipeline.status === "error";
+  const quotaExhausted = quota !== null && quota.remainingMs <= 0;
+  const idle = pipeline.status === "idle";
+  const showLimitCard = idle && quotaExhausted;
+  const showFileErrorCard = idle && !quotaExhausted && fileError !== null;
+  const showDropzone = idle && !quotaExhausted && fileError === null;
 
   return (
     <main className="flex flex-1 flex-col items-center p-8">
-      <div style={{ width: "100%", maxWidth: 880, display: "flex", flexDirection: "column", gap: 24 }}>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 880,
+          display: "flex",
+          flexDirection: "column",
+          gap: 24,
+        }}
+      >
         {isGuest ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 4 }}>
             <h1
@@ -98,7 +121,16 @@ export function Home() {
 
         {showDropzone && <Dropzone onFileSelected={handleFile} />}
 
-        {fileError && <p className="text-sm text-red-400">{fileError}</p>}
+        {showLimitCard && quota && (
+          <LimitReachedCard
+            limitMinutes={Math.floor(quota.limitMs / 60000)}
+            resetsAt={quota.resetsAt}
+          />
+        )}
+
+        {showFileErrorCard && fileError && (
+          <FileErrorCard message={fileError} onChooseAnother={() => setFileError(null)} />
+        )}
 
         {pipeline.status === "segmenting" && (
           <p className="text-sm text-neutral-400">Splitting audio…</p>

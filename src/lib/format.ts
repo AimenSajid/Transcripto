@@ -10,3 +10,14 @@ export function formatTimestamp(ms: number): string {
     ? `${hours}:${pad(minutes)}:${pad(seconds)}`
     : `${minutes}:${pad(seconds)}`;
 }
+
+/** "X hours Y minutes" / "Y minutes" until the given future timestamp. */
+export function formatCountdown(untilMs: number): string {
+  const remainingMs = Math.max(0, untilMs - Date.now());
+  const totalMinutes = Math.round(remainingMs / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours <= 0) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  return `${hours} hour${hours === 1 ? "" : "s"} ${minutes} minute${minutes === 1 ? "" : "s"}`;
+}
