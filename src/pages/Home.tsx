@@ -74,7 +74,7 @@ export function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-neutral-950 text-neutral-100">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--bg-page)] text-[var(--text-body)]">
       <h1 className="text-3xl font-semibold">Transcripto</h1>
       <p className="text-sm text-neutral-400">
         API health:{" "}
