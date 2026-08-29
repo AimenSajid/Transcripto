@@ -11,8 +11,12 @@ interface TranscriptDetailViewProps {
   exportSlot: ReactNode;
   titleSlot?: ReactNode;
   actionsExtra?: ReactNode;
+  notSavedMessage?: string;
   children?: ReactNode;
 }
+
+const DEFAULT_NOT_SAVED_MESSAGE =
+  "This transcript isn't saved. Signing in keeps it in your history with a summary and export options.";
 
 export function TranscriptDetailView({
   title,
@@ -23,6 +27,7 @@ export function TranscriptDetailView({
   exportSlot,
   titleSlot,
   actionsExtra,
+  notSavedMessage = DEFAULT_NOT_SAVED_MESSAGE,
   children,
 }: TranscriptDetailViewProps) {
   async function handleCopy() {
@@ -81,8 +86,7 @@ export function TranscriptDetailView({
 
       {!saved && (
         <Callout icon="lightbulb" tone="accent">
-          This transcript isn't saved. Signing in keeps it in your history
-          with a summary and export options.
+          {notSavedMessage}
         </Callout>
       )}
 

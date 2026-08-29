@@ -5,8 +5,21 @@ import { Icon } from "./ui/Icon";
 
 const TEASERS = ["One-paragraph overview", "Key points", "Action items"];
 
-export function SummaryLockedPanel() {
+interface SummaryLockedPanelProps {
+  heading?: string;
+  body?: string;
+  ctaLabel?: string;
+  onCta?: () => void;
+}
+
+export function SummaryLockedPanel({
+  heading = "Summaries are for signed-in users",
+  body = "Sign in and we'll generate a summary with key points and action items for this recording — usually in under a minute.",
+  ctaLabel = "Continue with Google",
+  onCta,
+}: SummaryLockedPanelProps) {
   const navigate = useNavigate();
+  const handleCta = onCta ?? (() => navigate("/login"));
 
   return (
     <Card padding="44px" radius="var(--radius-panel)">
@@ -42,7 +55,7 @@ export function SummaryLockedPanel() {
               margin: 0,
             }}
           >
-            Summaries are for signed-in users
+            {heading}
           </h2>
           <p
             style={{
@@ -52,8 +65,7 @@ export function SummaryLockedPanel() {
               maxWidth: "48ch",
             }}
           >
-            Sign in and we'll generate a summary with key points and action
-            items for this recording — usually in under a minute.
+            {body}
           </p>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-start" }}>
@@ -81,7 +93,7 @@ export function SummaryLockedPanel() {
             </div>
           ))}
         </div>
-        <Button onClick={() => navigate("/login")}>Continue with Google</Button>
+        <Button onClick={handleCta}>{ctaLabel}</Button>
       </div>
     </Card>
   );

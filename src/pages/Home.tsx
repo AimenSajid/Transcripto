@@ -22,13 +22,13 @@ import { useAuth } from "../context/AuthContext";
 import type { QuotaResponse, TranscriptSummary } from "../../shared/types";
 
 const RECENT_LIMIT = 3;
-const GUEST_TABS = [
+const DONE_TABS = [
   { id: "transcript", label: "Transcript" },
   { id: "summary", label: "Summary (Locked)" },
 ];
 
 type SaveStatus = "idle" | "saving" | "error";
-type GuestTabId = "transcript" | "summary";
+type DoneTabId = "transcript" | "summary";
 
 export function Home() {
   const pipeline = useTranscription();
@@ -39,8 +39,8 @@ export function Home() {
   const [quota, setQuota] = useState<QuotaResponse | null>(null);
   const [recent, setRecent] = useState<TranscriptSummary[]>([]);
   const [pendingFileName, setPendingFileName] = useState("");
-  const [guestTab, setGuestTab] = useState<GuestTabId>("transcript");
-  const [guestActiveIdx, setGuestActiveIdx] = useState<number | null>(null);
+  const [doneTab, setDoneTab] = useState<DoneTabId>("transcript");
+  const [doneActiveIdx, setDoneActiveIdx] = useState<number | null>(null);
 
   useEffect(() => {
     fetchQuota()
@@ -173,22 +173,35 @@ export function Home() {
         {pipeline.status === "error" && (
           <p className="text-sm text-red-400">{pipeline.error}</p>
         )}
-        {pipeline.status === "done" && pipeline.completed && isGuest && (
+        {pipeline.status === "done" && pipeline.completed && (
           <TranscriptDetailView
             title={pipeline.completed.fileName}
             metaLine={`Not saved · ${formatTimestamp(pipeline.completed.durationMs)}`}
             saved={false}
-            canCopy={false}
+            canCopy
             copyText={pipeline.completed.result.text}
-            exportSlot={<LockedExportPanel />}
+            notSavedMessage={
+              isGuest
+                ? "This transcript isn't saved. Signing in keeps it in your history with a summary and export options."
+                : "This transcript isn't saved yet. Save it to keep it in your history with a summary and export options."
+            }
+            exportSlot={
+              isGuest ? (
+                <LockedExportPanel />
+              ) : (
+                <Button onClick={() => void saveTranscript()} disabled={saveStatus === "saving"}>
+                  {saveStatus === "saving" ? "Saving…" : "Save transcript"}
+                </Button>
+              )
+            }
           >
             <Tabs
-              tabs={GUEST_TABS}
-              value={guestTab}
-              onChange={(id) => setGuestTab(id as GuestTabId)}
+              tabs={DONE_TABS}
+              value={doneTab}
+              onChange={(id) => setDoneTab(id as DoneTabId)}
             />
 
-            {guestTab === "transcript" && (
+            {doneTab === "transcript" && (
               <Card tone="sunken" padding="8px">
                 <div
                   style={{
@@ -205,33 +218,29 @@ export function Home() {
                       key={i}
                       time={formatTimestamp(segment.startMs)}
                       text={segment.text}
-                      active={guestActiveIdx === i}
-                      onClick={() => setGuestActiveIdx(i)}
+                      active={doneActiveIdx === i}
+                      onClick={() => setDoneActiveIdx(i)}
                     />
                   ))}
                 </div>
               </Card>
             )}
 
-            {guestTab === "summary" && <SummaryLockedPanel />}
+            {doneTab === "summary" &&
+              (isGuest ? (
+                <SummaryLockedPanel />
+              ) : (
+                <SummaryLockedPanel
+                  heading="Save this transcript to see a summary"
+                  body="Once it's saved, we'll generate an overview, key points, and action items — usually in under a minute."
+                  ctaLabel={saveStatus === "saving" ? "Saving…" : "Save transcript"}
+                  onCta={() => void saveTranscript()}
+                />
+              ))}
           </TranscriptDetailView>
         )}
-        {pipeline.status === "done" && pipeline.completed && !isGuest && (
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-center text-sm" style={{ color: "var(--text-body)" }}>
-              {pipeline.completed.result.text}
-            </p>
-            <button
-              onClick={() => void saveTranscript()}
-              disabled={saveStatus === "saving"}
-              className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
-            >
-              {saveStatus === "saving" ? "Saving…" : "Save transcript"}
-            </button>
-            {saveStatus === "error" && (
-              <p className="text-sm text-red-400">Failed to save transcript.</p>
-            )}
-          </div>
+        {pipeline.status === "done" && !isGuest && saveStatus === "error" && (
+          <p className="text-sm text-red-400">Failed to save transcript.</p>
         )}
 
         {idle && isGuest && (
