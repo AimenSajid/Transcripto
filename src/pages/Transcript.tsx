@@ -5,6 +5,8 @@ import { formatRowMeta, formatTimestamp } from "../lib/format";
 import { SummaryPanel } from "../components/SummaryPanel";
 import { ExportMenu } from "../components/ExportMenu";
 import { TranscriptDetailView } from "../components/TranscriptDetailView";
+import { Card } from "../components/ui/Card";
+import { TranscriptLine } from "../components/ui/TranscriptLine";
 import type { Transcript as TranscriptType } from "../../shared/types";
 
 type LoadStatus = "loading" | "done" | "error";
@@ -15,6 +17,7 @@ export function Transcript() {
   const [transcript, setTranscript] = useState<TranscriptType | null>(null);
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [titleDraft, setTitleDraft] = useState("");
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -105,16 +108,28 @@ export function Transcript() {
         >
           <SummaryPanel transcriptId={transcript.id} title={transcript.title} />
 
-          <ul className="flex flex-col gap-2">
-            {transcript.segments.map((segment, i) => (
-              <li key={i} className="flex gap-3 text-sm">
-                <span style={{ color: "var(--text-subtle)" }}>
-                  {formatTimestamp(segment.startMs)}
-                </span>
-                <span style={{ color: "var(--text-body)" }}>{segment.text}</span>
-              </li>
-            ))}
-          </ul>
+          <Card tone="sunken" padding="8px">
+            <div
+              style={{
+                maxHeight: 520,
+                overflowY: "auto",
+                padding: "10px 12px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+              }}
+            >
+              {transcript.segments.map((segment, i) => (
+                <TranscriptLine
+                  key={i}
+                  time={formatTimestamp(segment.startMs)}
+                  text={segment.text}
+                  active={activeIdx === i}
+                  onClick={() => setActiveIdx(i)}
+                />
+              ))}
+            </div>
+          </Card>
         </TranscriptDetailView>
       )}
     </main>
