@@ -1,59 +1,30 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { arrayBufferToBase64 } from "../audio/wav";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { validateAudioFile } from "../audio/validate";
 import { createTranscript } from "../api/transcripts";
 import { useTranscription } from "../transcription/useTranscription";
 import { ProgressBar } from "../components/ProgressBar";
-import { GoogleSignIn } from "../components/GoogleSignIn";
+import { Dropzone } from "../components/ui/Dropzone";
 import { useAuth } from "../context/AuthContext";
-import type { TranscribeChunkResponse } from "../../shared/types";
 
-type HealthStatus = "checking" | "ok" | "error";
-type TranscribeStatus = "idle" | "transcribing" | "done" | "error";
 type SaveStatus = "idle" | "saving" | "error";
 
 export function Home() {
-  const [status, setStatus] = useState<HealthStatus>("checking");
-  const [transcribeStatus, setTranscribeStatus] =
-    useState<TranscribeStatus>("idle");
-  const [result, setResult] = useState<TranscribeChunkResponse | null>(null);
   const pipeline = useTranscription();
   const auth = useAuth();
   const navigate = useNavigate();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [fileError, setFileError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch("/api/health")
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then(() => setStatus("ok"))
-      .catch(() => setStatus("error"));
-  }, []);
-
-  async function transcribeSample() {
-    setTranscribeStatus("transcribing");
-    setResult(null);
-    try {
-      const audioBuffer = await fetch("/sample.wav").then((res) =>
-        res.arrayBuffer(),
-      );
-      const res = await fetch("/api/transcribe/chunk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          audio: arrayBufferToBase64(audioBuffer),
-          offsetMs: 0,
-          durationMs: 4000,
-        }),
-      });
-      if (!res.ok) throw new Error(`transcribe failed: ${res.status}`);
-      const data = (await res.json()) as TranscribeChunkResponse;
-      setResult(data);
-      setTranscribeStatus("done");
-    } catch {
-      setTranscribeStatus("error");
+  function handleFile(file: File) {
+    const error = validateAudioFile(file);
+    if (error) {
+      setFileError(error);
+      return;
     }
+    setFileError(null);
+    setSaveStatus("idle");
+    void pipeline.run(file);
   }
 
   async function saveTranscript() {
@@ -72,125 +43,96 @@ export function Home() {
     }
   }
 
+  if (auth.status === "loading") {
+    return <main className="flex flex-1 flex-col items-center p-8" />;
+  }
+
+  const isGuest = auth.status !== "signed-in";
+  const showDropzone = pipeline.status === "idle" || pipeline.status === "error";
+
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
-      <h1 className="text-3xl font-semibold">Transcripto</h1>
-      <p className="text-sm text-neutral-400">
-        API health:{" "}
-        <span
-          className={
-            status === "ok"
-              ? "text-green-400"
-              : status === "error"
-                ? "text-red-400"
-                : "text-neutral-400"
-          }
-        >
-          {status}
-        </span>
-      </p>
-
-      {auth.status === "loading" && (
-        <p className="text-sm text-neutral-400">Checking sign-in…</p>
-      )}
-
-      {auth.status === "signed-out" && <GoogleSignIn />}
-
-      {auth.status === "signed-in" && auth.user && (
-        <div className="flex items-center gap-2 text-sm text-neutral-300">
-          <span>Signed in as {auth.user.name ?? auth.user.email}</span>
-          <Link to="/history" className="text-xs text-neutral-400 underline">
-            History
-          </Link>
-          <button
-            onClick={() => void auth.signOut()}
-            className="text-xs text-neutral-400 underline"
-          >
-            Sign out
-          </button>
-        </div>
-      )}
-
-      <button
-        onClick={transcribeSample}
-        disabled={transcribeStatus === "transcribing"}
-        className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
-      >
-        {transcribeStatus === "transcribing"
-          ? "Transcribing…"
-          : "Transcribe sample clip"}
-      </button>
-
-      {transcribeStatus === "error" && (
-        <p className="text-sm text-red-400">Transcription failed.</p>
-      )}
-
-      {result && (
-        <p className="max-w-md text-center text-sm text-neutral-200">
-          {result.text}
-        </p>
-      )}
-
-      <label className="flex flex-col items-center gap-2 text-sm text-neutral-400">
-        Transcribe an audio file
-        <input
-          type="file"
-          accept=".mp3,.wav,.m4a,.ogg,.flac,.webm"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-
-            const error = validateAudioFile(file);
-            if (error) {
-              setFileError(error);
-              return;
-            }
-
-            setFileError(null);
-            setSaveStatus("idle");
-            void pipeline.run(file);
-          }}
-          className="text-xs"
-        />
-      </label>
-
-      {fileError && <p className="text-sm text-red-400">{fileError}</p>}
-
-      {pipeline.status === "segmenting" && (
-        <p className="text-sm text-neutral-400">Splitting audio…</p>
-      )}
-      {pipeline.status === "transcribing" && (
-        <ProgressBar
-          done={pipeline.progress.done}
-          total={pipeline.progress.total}
-        />
-      )}
-      {pipeline.status === "error" && (
-        <p className="text-sm text-red-400">{pipeline.error}</p>
-      )}
-      {pipeline.status === "done" && pipeline.completed && (
-        <div className="flex max-w-md flex-col items-center gap-2">
-          <p className="text-center text-sm text-neutral-200">
-            {pipeline.completed.result.text}
-          </p>
-          {auth.status === "signed-in" ? (
-            <button
-              onClick={() => void saveTranscript()}
-              disabled={saveStatus === "saving"}
-              className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
+    <main className="flex flex-1 flex-col items-center p-8">
+      <div style={{ width: "100%", maxWidth: 880, display: "flex", flexDirection: "column", gap: 24 }}>
+        {isGuest ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 4 }}>
+            <h1
+              style={{
+                font: "var(--fw-extrabold) 40px/1.1 var(--font-display)",
+                letterSpacing: "var(--ls-display)",
+                color: "var(--text-strong)",
+                margin: 0,
+                maxWidth: "15ch",
+              }}
             >
-              {saveStatus === "saving" ? "Saving…" : "Save transcript"}
-            </button>
-          ) : (
-            <p className="text-xs text-neutral-400">
-              Sign in to save this transcript and get an AI summary.
+              Convert Audio to Text Instantly
+            </h1>
+            <p
+              style={{
+                font: "var(--fw-regular) var(--text-lg)/1.6 var(--font-body)",
+                color: "var(--text-muted)",
+                margin: 0,
+                maxWidth: "54ch",
+              }}
+            >
+              Upload an audio file and get accurate, AI-powered transcription
+              in seconds. No account needed.
             </p>
-          )}
-          {saveStatus === "error" && (
-            <p className="text-sm text-red-400">Failed to save transcript.</p>
-          )}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <h1
+              style={{
+                font: "var(--fw-extrabold) var(--text-h1)/1.15 var(--font-display)",
+                letterSpacing: "var(--ls-heading)",
+                color: "var(--text-strong)",
+                margin: 0,
+              }}
+            >
+              New Transcription
+            </h1>
+            <p style={{ font: "var(--type-body)", color: "var(--text-muted)", margin: 0 }}>
+              Saved to your history, summarised, and exportable when it's done.
+            </p>
+          </div>
+        )}
+
+        {showDropzone && <Dropzone onFileSelected={handleFile} />}
+
+        {fileError && <p className="text-sm text-red-400">{fileError}</p>}
+
+        {pipeline.status === "segmenting" && (
+          <p className="text-sm text-neutral-400">Splitting audio…</p>
+        )}
+        {pipeline.status === "transcribing" && (
+          <ProgressBar done={pipeline.progress.done} total={pipeline.progress.total} />
+        )}
+        {pipeline.status === "error" && (
+          <p className="text-sm text-red-400">{pipeline.error}</p>
+        )}
+        {pipeline.status === "done" && pipeline.completed && (
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-center text-sm" style={{ color: "var(--text-body)" }}>
+              {pipeline.completed.result.text}
+            </p>
+            {auth.status === "signed-in" ? (
+              <button
+                onClick={() => void saveTranscript()}
+                disabled={saveStatus === "saving"}
+                className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
+              >
+                {saveStatus === "saving" ? "Saving…" : "Save transcript"}
+              </button>
+            ) : (
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                Sign in to save this transcript and get an AI summary.
+              </p>
+            )}
+            {saveStatus === "error" && (
+              <p className="text-sm text-red-400">Failed to save transcript.</p>
+            )}
+          </div>
+        )}
+      </div>
     </main>
   );
 }
