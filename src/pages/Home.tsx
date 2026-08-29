@@ -5,6 +5,8 @@ import { createTranscript, listTranscripts } from "../api/transcripts";
 import { fetchQuota } from "../api/quota";
 import { useTranscription } from "../transcription/useTranscription";
 import { Dropzone } from "../components/ui/Dropzone";
+import { RecordPanel } from "../components/ui/RecordPanel";
+import { useAudioRecorder } from "../audio/useAudioRecorder";
 import { ProcessingView } from "../components/ProcessingView";
 import { LimitReachedCard } from "../components/LimitReachedCard";
 import { FileErrorCard } from "../components/FileErrorCard";
@@ -29,11 +31,13 @@ const DONE_TABS = [
 
 type SaveStatus = "idle" | "saving" | "error";
 type DoneTabId = "transcript" | "summary";
+type InputMode = "upload" | "record";
 
 export function Home() {
   const pipeline = useTranscription();
   const auth = useAuth();
   const navigate = useNavigate();
+  const recorder = useAudioRecorder();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [fileError, setFileError] = useState<string | null>(null);
   const [quota, setQuota] = useState<QuotaResponse | null>(null);
@@ -41,6 +45,7 @@ export function Home() {
   const [pendingFileName, setPendingFileName] = useState("");
   const [doneTab, setDoneTab] = useState<DoneTabId>("transcript");
   const [doneActiveIdx, setDoneActiveIdx] = useState<number | null>(null);
+  const [inputMode, setInputMode] = useState<InputMode>("upload");
 
   useEffect(() => {
     fetchQuota()
@@ -65,6 +70,15 @@ export function Home() {
     setSaveStatus("idle");
     setPendingFileName(file.name);
     void pipeline.run(file);
+  }
+
+  async function handleRecordToggle() {
+    if (recorder.status === "recording") {
+      const file = await recorder.stop();
+      if (file) handleFile(file);
+    } else {
+      await recorder.start();
+    }
   }
 
   async function saveTranscript() {
@@ -148,7 +162,51 @@ export function Home() {
           </div>
         )}
 
-        {showDropzone && <Dropzone onFileSelected={handleFile} />}
+        {showDropzone && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              {(["upload", "record"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setInputMode(mode)}
+                  style={{
+                    font: "var(--type-label)",
+                    padding: "6px 14px",
+                    borderRadius: "var(--radius-pill)",
+                    border: "1px solid var(--border-subtle)",
+                    background:
+                      inputMode === mode ? "var(--surface-active)" : "transparent",
+                    color: inputMode === mode ? "var(--text-strong)" : "var(--text-muted)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {mode === "upload" ? "Upload File" : "Record Audio"}
+                </button>
+              ))}
+            </div>
+
+            {inputMode === "upload" ? (
+              <Dropzone onFileSelected={handleFile} />
+            ) : (
+              <RecordPanel
+                elapsed={formatTimestamp(recorder.elapsedMs)}
+                status={
+                  recorder.status === "requesting"
+                    ? "Requesting microphone…"
+                    : recorder.status === "recording"
+                      ? "Recording…"
+                      : recorder.status === "error"
+                        ? (recorder.error ?? "Something went wrong.")
+                        : "Ready to record"
+                }
+                recording={recorder.status === "recording"}
+                disabled={recorder.status === "requesting"}
+                onToggle={() => void handleRecordToggle()}
+              />
+            )}
+          </div>
+        )}
 
         {showLimitCard && quota && (
           <LimitReachedCard
