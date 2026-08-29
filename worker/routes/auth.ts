@@ -3,8 +3,10 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { googleAuthRequestSchema } from "../../shared/schemas";
 import type { User } from "../../shared/types";
 import { getUserById, upsertUserByGoogleSub } from "../db/queries";
+import { getClientIp } from "../lib/clientIp";
 import { SESSION_COOKIE_NAME } from "../middleware/requireAuth";
 import { verifyGoogleIdToken } from "../services/google";
+import { transferGuestUsageToUser } from "../services/quota";
 import { signSessionToken, verifySessionToken } from "../services/session";
 import type { DbUser } from "../types";
 
@@ -32,6 +34,7 @@ auth.post("/google", async (c) => {
   }
 
   const user = await upsertUserByGoogleSub(c.env.DB, identity);
+  await transferGuestUsageToUser(c.env.DB, user.id, getClientIp(c));
   const token = await signSessionToken({ userId: user.id }, c.env.JWT_SECRET);
 
   setCookie(c, SESSION_COOKIE_NAME, token, {

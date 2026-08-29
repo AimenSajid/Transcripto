@@ -304,6 +304,17 @@ export async function addAnonUsageForDay(
     .run();
 }
 
+export async function clearAnonUsageForDay(
+  db: D1Database,
+  ip: string,
+  day: string,
+): Promise<void> {
+  await db
+    .prepare(`DELETE FROM anon_usage_ledger WHERE ip = ? AND day = ?`)
+    .bind(ip, day)
+    .run();
+}
+
 interface SummaryRow {
   summary: string;
   key_points: string;
