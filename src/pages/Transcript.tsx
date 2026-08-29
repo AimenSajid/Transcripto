@@ -39,7 +39,7 @@ export function Transcript() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center gap-4 bg-[var(--bg-page)] p-8 text-[var(--text-body)]">
+    <main className="flex flex-1 flex-col items-center gap-4 p-8">
       <Link to="/history" className="text-sm text-neutral-400 underline">
         Back to history
       </Link>

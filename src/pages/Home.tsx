@@ -5,7 +5,6 @@ import { validateAudioFile } from "../audio/validate";
 import { createTranscript } from "../api/transcripts";
 import { useTranscription } from "../transcription/useTranscription";
 import { ProgressBar } from "../components/ProgressBar";
-import { QuotaBadge } from "../components/QuotaBadge";
 import { GoogleSignIn } from "../components/GoogleSignIn";
 import { useAuth } from "../context/AuthContext";
 import type { TranscribeChunkResponse } from "../../shared/types";
@@ -74,7 +73,7 @@ export function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--bg-page)] text-[var(--text-body)]">
+    <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
       <h1 className="text-3xl font-semibold">Transcripto</h1>
       <p className="text-sm text-neutral-400">
         API health:{" "}
@@ -111,8 +110,6 @@ export function Home() {
           </button>
         </div>
       )}
-
-      <QuotaBadge refreshKey={pipeline.status} />
 
       <button
         onClick={transcribeSample}

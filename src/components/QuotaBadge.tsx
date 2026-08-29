@@ -26,9 +26,48 @@ export function QuotaBadge({ refreshKey }: { refreshKey?: unknown }) {
 
   if (remainingMs === null || limitMs === null) return null;
 
+  const left = toMinutes(remainingMs);
+  const limit = toMinutes(limitMs);
+  const pct = limit === 0 ? 0 : Math.max(0, Math.min(100, (left / limit) * 100));
+  const fill = left <= 5 ? "var(--amber-500)" : "var(--action-primary)";
+  const label = left <= 0 ? "Daily limit reached" : `${left} of ${limit} min left today`;
+
   return (
-    <p className="text-xs text-neutral-500">
-      {toMinutes(remainingMs)} / {toMinutes(limitMs)} min left today
-    </p>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "6px 14px",
+        background: "var(--surface-card)",
+        border: "1px solid var(--border-subtle)",
+        borderRadius: "var(--radius-pill)",
+      }}
+    >
+      <div
+        style={{
+          width: 54,
+          height: 5,
+          borderRadius: "var(--radius-pill)",
+          background: "var(--track)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            borderRadius: "var(--radius-pill)",
+            transition: "width 520ms cubic-bezier(.2,.8,.2,1)",
+            width: `${pct}%`,
+            background: fill,
+          }}
+        />
+      </div>
+      <span
+        style={{ font: "var(--type-label)", color: "var(--text-muted)", whiteSpace: "nowrap" }}
+      >
+        {label}
+      </span>
+    </div>
   );
 }

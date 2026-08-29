@@ -27,7 +27,7 @@ export function History() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center gap-4 bg-[var(--bg-page)] p-8 text-[var(--text-body)]">
+    <main className="flex flex-1 flex-col items-center gap-4 p-8">
       <h1 className="text-2xl font-semibold">History</h1>
       <Link to="/" className="text-sm text-neutral-400 underline">
         Back to home
