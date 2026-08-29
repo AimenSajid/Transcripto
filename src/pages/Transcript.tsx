@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { deleteTranscript, getTranscript, renameTranscript } from "../api/transcripts";
-import { formatTimestamp } from "../lib/format";
+import { formatRowMeta, formatTimestamp } from "../lib/format";
 import { SummaryPanel } from "../components/SummaryPanel";
 import { ExportMenu } from "../components/ExportMenu";
+import { TranscriptDetailView } from "../components/TranscriptDetailView";
 import type { Transcript as TranscriptType } from "../../shared/types";
 
 type LoadStatus = "loading" | "done" | "error";
@@ -40,54 +41,81 @@ export function Transcript() {
 
   return (
     <main className="flex flex-1 flex-col items-center gap-4 p-8">
-      <Link to="/history" className="text-sm text-neutral-400 underline">
-        Back to history
+      <Link
+        to="/history"
+        style={{ font: "var(--type-label)", color: "var(--text-muted)", textDecoration: "none" }}
+      >
+        ← Back to history
       </Link>
 
-      {status === "loading" && (
-        <p className="text-sm text-neutral-400">Loading…</p>
-      )}
-      {status === "error" && (
-        <p className="text-sm text-red-400">Transcript not found.</p>
-      )}
+      {status === "loading" && <p style={{ color: "var(--text-muted)" }}>Loading…</p>}
+      {status === "error" && <p style={{ color: "var(--red-500)" }}>Transcript not found.</p>}
 
       {transcript && (
-        <div className="flex w-full max-w-2xl flex-col gap-4">
-          <div className="flex items-center gap-2">
+        <TranscriptDetailView
+          title={transcript.title}
+          metaLine={`Saved · ${formatRowMeta(transcript)}`}
+          saved
+          canCopy
+          copyText={transcript.text}
+          exportSlot={<ExportMenu transcriptId={transcript.id} title={transcript.title} />}
+          titleSlot={
             <input
               value={titleDraft}
               onChange={(e) => setTitleDraft(e.target.value)}
-              className="flex-1 rounded bg-neutral-900 px-3 py-1 text-lg font-semibold text-neutral-100"
+              style={{
+                width: "100%",
+                font: "var(--fw-extrabold) var(--text-h1)/1.15 var(--font-display)",
+                letterSpacing: "var(--ls-heading)",
+                color: "var(--text-strong)",
+                background: "none",
+                border: "none",
+                padding: 0,
+              }}
             />
-            <button
-              onClick={() => void handleRename()}
-              className="text-xs text-neutral-400 underline"
-            >
-              Rename
-            </button>
-            <button
-              onClick={() => void handleDelete()}
-              className="text-xs text-red-400 underline"
-            >
-              Delete
-            </button>
-          </div>
-
-          <ExportMenu transcriptId={transcript.id} title={transcript.title} />
-
+          }
+          actionsExtra={
+            <>
+              <button
+                onClick={() => void handleRename()}
+                style={{
+                  font: "var(--type-label)",
+                  color: "var(--text-muted)",
+                  background: "none",
+                  border: 0,
+                  cursor: "pointer",
+                }}
+              >
+                Rename
+              </button>
+              <button
+                onClick={() => void handleDelete()}
+                style={{
+                  font: "var(--type-label)",
+                  color: "var(--red-500)",
+                  background: "none",
+                  border: 0,
+                  cursor: "pointer",
+                }}
+              >
+                Delete
+              </button>
+            </>
+          }
+        >
           <SummaryPanel transcriptId={transcript.id} title={transcript.title} />
 
           <ul className="flex flex-col gap-2">
             {transcript.segments.map((segment, i) => (
               <li key={i} className="flex gap-3 text-sm">
-                <span className="shrink-0 text-neutral-500">
+                <span style={{ color: "var(--text-subtle)" }}>
                   {formatTimestamp(segment.startMs)}
                 </span>
-                <span className="text-neutral-200">{segment.text}</span>
+                <span style={{ color: "var(--text-body)" }}>{segment.text}</span>
               </li>
             ))}
           </ul>
-        </div>
+        </TranscriptDetailView>
       )}
     </main>
   );

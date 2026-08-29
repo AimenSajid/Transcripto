@@ -10,9 +10,11 @@ import { LimitReachedCard } from "../components/LimitReachedCard";
 import { FileErrorCard } from "../components/FileErrorCard";
 import { FeatureCard } from "../components/ui/FeatureCard";
 import { TranscriptionRow } from "../components/TranscriptionRow";
+import { TranscriptDetailView } from "../components/TranscriptDetailView";
+import { LockedExportPanel } from "../components/LockedExportPanel";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
-import { formatRowMeta } from "../lib/format";
+import { formatRowMeta, formatTimestamp } from "../lib/format";
 import { useAuth } from "../context/AuthContext";
 import type { QuotaResponse, TranscriptSummary } from "../../shared/types";
 
@@ -161,24 +163,32 @@ export function Home() {
         {pipeline.status === "error" && (
           <p className="text-sm text-red-400">{pipeline.error}</p>
         )}
-        {pipeline.status === "done" && pipeline.completed && (
+        {pipeline.status === "done" && pipeline.completed && isGuest && (
+          <TranscriptDetailView
+            title={pipeline.completed.fileName}
+            metaLine={`Not saved · ${formatTimestamp(pipeline.completed.durationMs)}`}
+            saved={false}
+            canCopy={false}
+            copyText={pipeline.completed.result.text}
+            exportSlot={<LockedExportPanel />}
+          >
+            <p className="text-center text-sm" style={{ color: "var(--text-body)" }}>
+              {pipeline.completed.result.text}
+            </p>
+          </TranscriptDetailView>
+        )}
+        {pipeline.status === "done" && pipeline.completed && !isGuest && (
           <div className="flex flex-col items-center gap-2">
             <p className="text-center text-sm" style={{ color: "var(--text-body)" }}>
               {pipeline.completed.result.text}
             </p>
-            {auth.status === "signed-in" ? (
-              <button
-                onClick={() => void saveTranscript()}
-                disabled={saveStatus === "saving"}
-                className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
-              >
-                {saveStatus === "saving" ? "Saving…" : "Save transcript"}
-              </button>
-            ) : (
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Sign in to save this transcript and get an AI summary.
-              </p>
-            )}
+            <button
+              onClick={() => void saveTranscript()}
+              disabled={saveStatus === "saving"}
+              className="rounded bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-50"
+            >
+              {saveStatus === "saving" ? "Saving…" : "Save transcript"}
+            </button>
             {saveStatus === "error" && (
               <p className="text-sm text-red-400">Failed to save transcript.</p>
             )}
