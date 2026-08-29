@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { applyTheme, getStoredTheme } from "../../lib/theme";
 import { QuotaBadge } from "../QuotaBadge";
 import { Avatar } from "../ui/Avatar";
 import { Button } from "../ui/Button";
@@ -19,7 +20,13 @@ export function TopBar({ left }: { left?: ReactNode }) {
   const auth = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const dark = false; // wired for real in the dark-mode increment
+  const [dark, setDark] = useState(() => getStoredTheme() === "dark");
+
+  function toggleTheme() {
+    const next = dark ? "light" : "dark";
+    applyTheme(next);
+    setDark(next === "dark");
+  }
 
   return (
     <header
@@ -45,7 +52,7 @@ export function TopBar({ left }: { left?: ReactNode }) {
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <QuotaBadge />
 
-        <IconButton label={dark ? "Light mode" : "Dark mode"} onClick={() => {}}>
+        <IconButton label={dark ? "Light mode" : "Dark mode"} onClick={toggleTheme}>
           <Icon name={dark ? "sun" : "moon"} size={18} />
         </IconButton>
 
