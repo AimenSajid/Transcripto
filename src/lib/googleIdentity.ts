@@ -7,6 +7,7 @@ interface GoogleIdButtonOptions {
   type?: "standard" | "icon";
   theme?: "outline" | "filled_blue" | "filled_black";
   size?: "large" | "medium" | "small";
+  width?: string;
 }
 
 interface GoogleAccountsId {
@@ -22,6 +23,7 @@ export function renderGoogleSignInButton(
   container: HTMLElement,
   clientId: string,
   onCredential: (credential: string) => void,
+  width?: string,
 ): void {
   const win = window as unknown as GoogleIdentityWindow;
   const accountsId = win.google?.accounts.id;
@@ -37,5 +39,6 @@ export function renderGoogleSignInButton(
     type: "standard",
     theme: "outline",
     size: "large",
+    width,
   });
 }

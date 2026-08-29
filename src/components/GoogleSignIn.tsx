@@ -7,17 +7,22 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as
   | string
   | undefined;
 
-export function GoogleSignIn() {
+export function GoogleSignIn({ width }: { width?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { setUser } = useAuth();
 
   useEffect(() => {
     if (!containerRef.current || !GOOGLE_CLIENT_ID) return;
 
-    renderGoogleSignInButton(containerRef.current, GOOGLE_CLIENT_ID, (credential) => {
-      void signInWithGoogle(credential).then(setUser);
-    });
-  }, [setUser]);
+    renderGoogleSignInButton(
+      containerRef.current,
+      GOOGLE_CLIENT_ID,
+      (credential) => {
+        void signInWithGoogle(credential).then(setUser);
+      },
+      width,
+    );
+  }, [setUser, width]);
 
   if (!GOOGLE_CLIENT_ID) {
     return (
