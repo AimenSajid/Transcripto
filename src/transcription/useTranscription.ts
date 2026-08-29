@@ -5,8 +5,15 @@ import { transcribeChunks } from "./pipeline";
 import { stitchTranscripts } from "./stitch";
 import type { TranscribeChunkResponse } from "../../shared/types";
 
-function formatMinutes(ms: number): string {
+// Ceil for "how much this file needs" (a conservative at-least estimate),
+// floor for "how much quota is left" (so it never overstates what's left
+// and then rejects the file anyway — see QuotaBadge for the matching floor).
+function formatNeededMinutes(ms: number): string {
   return `${Math.ceil(ms / 60000)} min`;
+}
+
+function formatRemainingMinutes(ms: number): string {
+  return `${Math.floor(ms / 60000)} min`;
 }
 
 export type TranscriptionStatus =
@@ -59,7 +66,7 @@ export function useTranscription(): UseTranscriptionResult {
       const quota = await fetchQuota();
       if (durationMs > quota.remainingMs) {
         setError(
-          `This file is ${formatMinutes(durationMs)}, but you only have ${formatMinutes(quota.remainingMs)} left today.`,
+          `This file is ${formatNeededMinutes(durationMs)}, but you only have ${formatRemainingMinutes(quota.remainingMs)} left today.`,
         );
         setStatus("error");
         return;
