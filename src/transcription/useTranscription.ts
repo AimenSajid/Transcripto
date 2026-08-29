@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { fetchQuota } from "../api/quota";
 import { segmentAudioFile } from "../audio";
 import { transcribeChunks } from "./pipeline";
@@ -40,6 +40,7 @@ export interface UseTranscriptionResult {
   completed: CompletedTranscription | null;
   error: string | null;
   run: (file: File) => Promise<void>;
+  cancel: () => void;
 }
 
 export function useTranscription(): UseTranscriptionResult {
@@ -52,8 +53,10 @@ export function useTranscription(): UseTranscriptionResult {
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const cancelledRef = useRef(false);
 
   const run = useCallback(async (file: File) => {
+    cancelledRef.current = false;
     setStatus("segmenting");
     setCompleted(null);
     setError(null);
@@ -61,9 +64,13 @@ export function useTranscription(): UseTranscriptionResult {
 
     try {
       const chunks = await segmentAudioFile(file);
+      if (cancelledRef.current) return;
+
       const durationMs = chunks.reduce((sum, chunk) => sum + chunk.durationMs, 0);
 
       const quota = await fetchQuota();
+      if (cancelledRef.current) return;
+
       if (durationMs > quota.remainingMs) {
         setError(
           `This file is ${formatNeededMinutes(durationMs)}, but you only have ${formatRemainingMinutes(quota.remainingMs)} left today.`,
@@ -80,7 +87,9 @@ export function useTranscription(): UseTranscriptionResult {
           const done = statuses.filter((s) => s === "done").length;
           setProgress({ done, total: statuses.length });
         },
+        isCancelled: () => cancelledRef.current,
       });
+      if (cancelledRef.current) return;
 
       setCompleted({
         result: stitchTranscripts(responses),
@@ -89,10 +98,17 @@ export function useTranscription(): UseTranscriptionResult {
       });
       setStatus("done");
     } catch (err) {
+      if (cancelledRef.current) return;
       setError(err instanceof Error ? err.message : "Transcription failed");
       setStatus("error");
     }
   }, []);
 
-  return { status, progress, completed, error, run };
+  const cancel = useCallback(() => {
+    cancelledRef.current = true;
+    setStatus("idle");
+    setProgress({ done: 0, total: 0 });
+  }, []);
+
+  return { status, progress, completed, error, run, cancel };
 }

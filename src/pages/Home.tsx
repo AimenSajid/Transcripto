@@ -4,8 +4,8 @@ import { validateAudioFile } from "../audio/validate";
 import { createTranscript, listTranscripts } from "../api/transcripts";
 import { fetchQuota } from "../api/quota";
 import { useTranscription } from "../transcription/useTranscription";
-import { ProgressBar } from "../components/ProgressBar";
 import { Dropzone } from "../components/ui/Dropzone";
+import { ProcessingView } from "../components/ProcessingView";
 import { LimitReachedCard } from "../components/LimitReachedCard";
 import { FileErrorCard } from "../components/FileErrorCard";
 import { FeatureCard } from "../components/ui/FeatureCard";
@@ -28,6 +28,7 @@ export function Home() {
   const [fileError, setFileError] = useState<string | null>(null);
   const [quota, setQuota] = useState<QuotaResponse | null>(null);
   const [recent, setRecent] = useState<TranscriptSummary[]>([]);
+  const [pendingFileName, setPendingFileName] = useState("");
 
   useEffect(() => {
     fetchQuota()
@@ -50,6 +51,7 @@ export function Home() {
     }
     setFileError(null);
     setSaveStatus("idle");
+    setPendingFileName(file.name);
     void pipeline.run(file);
   }
 
@@ -147,11 +149,14 @@ export function Home() {
           <FileErrorCard message={fileError} onChooseAnother={() => setFileError(null)} />
         )}
 
-        {pipeline.status === "segmenting" && (
-          <p className="text-sm text-neutral-400">Splitting audio…</p>
-        )}
-        {pipeline.status === "transcribing" && (
-          <ProgressBar done={pipeline.progress.done} total={pipeline.progress.total} />
+        {(pipeline.status === "segmenting" || pipeline.status === "transcribing") && (
+          <ProcessingView
+            status={pipeline.status}
+            progress={pipeline.progress}
+            fileName={pendingFileName}
+            isGuest={isGuest}
+            onCancel={pipeline.cancel}
+          />
         )}
         {pipeline.status === "error" && (
           <p className="text-sm text-red-400">{pipeline.error}</p>

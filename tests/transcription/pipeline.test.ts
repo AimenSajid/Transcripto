@@ -103,4 +103,22 @@ describe("transcribeChunks", () => {
     await vi.runAllTimersAsync();
     await expectation;
   });
+
+  it("stops starting new chunks once cancelled", async () => {
+    const chunks = [makeChunk(0), makeChunk(1000), makeChunk(2000), makeChunk(3000)];
+    let cancelled = false;
+    const fetchMock = vi.fn(async () => {
+      cancelled = true; // cancel after the first chunk starts
+      return jsonResponse({ text: "ok", segments: [] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await transcribeChunks(chunks, {
+      concurrency: 1,
+      maxRetries: 0,
+      isCancelled: () => cancelled,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

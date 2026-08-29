@@ -7,6 +7,7 @@ export interface TranscribePipelineOptions {
   maxRetries?: number;
   language?: string;
   onProgress?: (statuses: ChunkStatus[]) => void;
+  isCancelled?: () => boolean;
 }
 
 const DEFAULT_CONCURRENCY = 2;
@@ -57,6 +58,7 @@ export async function transcribeChunks(
     maxRetries = DEFAULT_MAX_RETRIES,
     language,
     onProgress,
+    isCancelled,
   } = options;
 
   const results: TranscribeChunkResponse[] = new Array(chunks.length);
@@ -71,6 +73,7 @@ export async function transcribeChunks(
 
   async function worker() {
     while (nextIndex < chunks.length) {
+      if (isCancelled?.()) return;
       const index = nextIndex++;
       statuses[index] = "in-flight";
       reportProgress();
