@@ -4,7 +4,9 @@
    below live here instead and are applied via className. */
 
 .mobile-menu-btn {
-  display: none;
+  /* IconButton always sets display: inline-flex inline, so both rules
+     here need !important or they lose to it regardless of media query. */
+  display: none !important;
 }
 
 .app-sidebar-backdrop {
@@ -16,11 +18,15 @@
 
 @media (max-width: 767px) {
   .mobile-menu-btn {
-    display: inline-flex;
+    display: inline-flex !important;
   }
 
   .app-sidebar {
-    position: fixed;
+    /* Sidebar.tsx sets position: sticky inline for the desktop layout,
+       and an inline style always beats a plain class rule — !important
+       is required here or this never actually takes the sidebar out of
+       flow, leaving its 236px reserved in the layout even while closed. */
+    position: fixed !important;
     top: 0;
     left: 0;
     height: 100vh;
