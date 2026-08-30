@@ -345,7 +345,10 @@ export function Home() {
                   body="TXT, SRT, VTT and Markdown"
                 />
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div
+                className="guest-cta-row"
+                style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}
+              >
                 <Button onClick={() => navigate("/login")}>Get Started Free</Button>
                 <span
                   style={{

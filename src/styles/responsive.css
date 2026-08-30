@@ -43,6 +43,12 @@
     padding-left: 16px !important;
     padding-right: 16px !important;
   }
+
+  .guest-cta-row {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center;
+  }
 }
 
 /* The quota badge's "X of Y min left today" label is the widest single
