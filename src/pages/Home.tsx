@@ -252,6 +252,11 @@ export function Home() {
                 </Button>
               )
             }
+            actionsExtra={
+              <Button variant="ghost" onClick={() => navigate("/")}>
+                New Transcription
+              </Button>
+            }
           >
             <Tabs
               tabs={DONE_TABS}

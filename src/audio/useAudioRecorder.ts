@@ -105,6 +105,7 @@ export function useAudioRecorder(): UseAudioRecorderResult {
       stopResolveRef.current = resolve;
       recorder.stop();
       setStatus("idle");
+      setElapsedMs(0);
     });
   }, []);
 

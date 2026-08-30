@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { generateSummary } from "../api/summaries";
 import { downloadBlob } from "../lib/download";
-import { Badge } from "./ui/Badge";
 import { Card } from "./ui/Card";
 import type { Summary } from "../../shared/types";
 
@@ -80,7 +79,6 @@ export function SummaryPanel({
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={labelStyle}>Overview</span>
-            <Badge tone="accent">Beta</Badge>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             {summary && (
