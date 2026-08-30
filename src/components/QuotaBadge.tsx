@@ -34,6 +34,7 @@ export function QuotaBadge({ refreshKey }: { refreshKey?: unknown }) {
 
   return (
     <div
+      className="quota-badge"
       style={{
         display: "flex",
         alignItems: "center",
@@ -51,6 +52,7 @@ export function QuotaBadge({ refreshKey }: { refreshKey?: unknown }) {
           borderRadius: "var(--radius-pill)",
           background: "var(--track)",
           overflow: "hidden",
+          flex: "0 0 auto",
         }}
       >
         <div
@@ -64,6 +66,7 @@ export function QuotaBadge({ refreshKey }: { refreshKey?: unknown }) {
         />
       </div>
       <span
+        className="quota-badge-label"
         style={{ font: "var(--type-label)", color: "var(--text-muted)", whiteSpace: "nowrap" }}
       >
         {label}

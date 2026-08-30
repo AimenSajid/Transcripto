@@ -30,6 +30,7 @@ export function TopBar({ left, onMenuClick }: { left?: ReactNode; onMenuClick?: 
 
   return (
     <header
+      className="app-topbar"
       style={{
         height: "var(--topbar-h)",
         flex: "0 0 var(--topbar-h)",

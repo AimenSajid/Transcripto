@@ -91,5 +91,5 @@ export function GoogleSignIn({ width = 348 }: { width?: number }) {
     );
   }
 
-  return <div ref={containerRef} />;
+  return <div ref={containerRef} style={{ maxWidth: "100%", overflow: "hidden" }} />;
 }

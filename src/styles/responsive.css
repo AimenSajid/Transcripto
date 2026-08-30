@@ -32,4 +32,23 @@
   .app-sidebar.is-open {
     transform: translateX(0);
   }
+
+  .app-topbar {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+/* The quota badge's "X of Y min left today" label is the widest single
+   thing in the top bar and the first thing that has to give — below this
+   the compact progress bar alone still communicates status. */
+@media (max-width: 520px) {
+  .quota-badge-label {
+    display: none;
+  }
+
+  .quota-badge {
+    padding: 6px 10px !important;
+    gap: 0 !important;
+  }
 }
