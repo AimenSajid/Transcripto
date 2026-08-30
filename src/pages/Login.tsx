@@ -48,7 +48,7 @@ export function Login() {
             </p>
           </div>
 
-          <GoogleSignIn width="348" />
+          <GoogleSignIn />
 
           <p
             style={{
