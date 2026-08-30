@@ -13,6 +13,7 @@ import {
   House,
   Lightbulb,
   LogOut,
+  Menu,
   Mic,
   Moon,
   Pause,
@@ -24,6 +25,7 @@ import {
   ShieldCheck,
   Sun,
   Volume2,
+  X,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -43,6 +45,7 @@ const ICONS: Record<string, LucideIcon> = {
   house: House,
   lightbulb: Lightbulb,
   "log-out": LogOut,
+  menu: Menu,
   mic: Mic,
   moon: Moon,
   pause: Pause,
@@ -54,6 +57,7 @@ const ICONS: Record<string, LucideIcon> = {
   "shield-check": ShieldCheck,
   sun: Sun,
   "volume-2": Volume2,
+  x: X,
   zap: Zap,
 };
 

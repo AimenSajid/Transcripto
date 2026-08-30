@@ -322,7 +322,13 @@ export function Home() {
                 </span>
                 <div style={{ flex: 1, height: 1, background: "var(--border-subtle)" }} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: 20,
+                }}
+              >
                 <FeatureCard
                   icon="file-text"
                   title="Saved history"

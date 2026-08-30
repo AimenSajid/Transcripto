@@ -19,7 +19,7 @@ export function LockedExportPanel() {
             top: 48,
             right: 0,
             zIndex: 30,
-            width: 300,
+            width: "min(300px, calc(100vw - 24px))",
             background: "var(--surface-card)",
             border: "1px solid var(--border-subtle)",
             borderRadius: "var(--radius-card)",

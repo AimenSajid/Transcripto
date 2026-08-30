@@ -16,7 +16,7 @@ function initialsFor(name: string | null, email: string | null): string {
   return source.slice(0, 2).toUpperCase();
 }
 
-export function TopBar({ left }: { left?: ReactNode }) {
+export function TopBar({ left, onMenuClick }: { left?: ReactNode; onMenuClick?: () => void }) {
   const auth = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -45,7 +45,12 @@ export function TopBar({ left }: { left?: ReactNode }) {
         zIndex: 20,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+        {onMenuClick && (
+          <IconButton label="Open menu" className="mobile-menu-btn" onClick={onMenuClick}>
+            <Icon name="menu" size={18} />
+          </IconButton>
+        )}
         {left ??
           (auth.status !== "signed-in" && (
             <Wordmark size={17} onClick={() => navigate("/")} style={{ cursor: "pointer" }} />
@@ -91,7 +96,7 @@ export function TopBar({ left }: { left?: ReactNode }) {
                   top: 44,
                   right: 0,
                   zIndex: 40,
-                  width: 244,
+                  width: "min(244px, calc(100vw - 24px))",
                   background: "var(--surface-card)",
                   border: "1px solid var(--border-subtle)",
                   borderRadius: "var(--radius-card)",

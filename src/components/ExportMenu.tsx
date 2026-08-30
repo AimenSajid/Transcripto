@@ -42,7 +42,7 @@ export function ExportMenu({
             top: 48,
             right: 0,
             zIndex: 30,
-            width: 290,
+            width: "min(290px, calc(100vw - 24px))",
             background: "var(--surface-card)",
             border: "1px solid var(--border-subtle)",
             borderRadius: "var(--radius-card)",
