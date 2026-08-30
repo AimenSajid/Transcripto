@@ -5,6 +5,26 @@ import type { DbUser } from "../types";
 
 const summaries = new Hono<{ Bindings: Env; Variables: { user: DbUser } }>();
 
+summaries.get("/:id/summary", async (c) => {
+  const user = c.get("user");
+  const id = Number(c.req.param("id"));
+  if (!Number.isInteger(id)) {
+    return c.json({ error: "Invalid transcript id", code: "invalid_id" }, 400);
+  }
+
+  const transcript = await queries.getTranscriptForUser(c.env.DB, user.id, id);
+  if (!transcript) {
+    return c.json({ error: "Transcript not found", code: "not_found" }, 404);
+  }
+
+  const existing = await queries.getSummaryForTranscript(c.env.DB, id);
+  if (!existing) {
+    return c.json({ error: "No summary saved for this transcript", code: "not_found" }, 404);
+  }
+
+  return c.json(existing);
+});
+
 summaries.post("/:id/summary", async (c) => {
   const user = c.get("user");
   const id = Number(c.req.param("id"));

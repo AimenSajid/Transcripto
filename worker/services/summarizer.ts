@@ -26,6 +26,12 @@ async function requestSummary(
       { role: "user", content: buildSummaryPrompt(transcriptText) },
     ],
     response_format: { type: "json_object" },
+    // gpt-oss models spend part of their output budget on an internal
+    // reasoning pass before the final JSON; the API's 256-token default
+    // was cutting the response off mid-JSON. reasoning_effort keeps that
+    // pass short so more of the budget goes to the actual answer.
+    max_tokens: 2048,
+    reasoning_effort: "low",
   });
 
   if (!("choices" in output)) return null;

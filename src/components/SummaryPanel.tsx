@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { generateSummary } from "../api/summaries";
+import { generateSummary, getSummary } from "../api/summaries";
 import { downloadBlob } from "../lib/download";
 import { Card } from "./ui/Card";
 import type { Summary } from "../../shared/types";
 
-type Status = "loading" | "idle" | "error";
+type Status = "loading" | "generating" | "idle" | "missing" | "error";
 
 function formatSummaryForDownload(summary: Summary): string {
   const lines = [summary.summary, ""];
@@ -39,16 +39,16 @@ export function SummaryPanel({
   useEffect(() => {
     setStatus("loading");
     setSummary(null);
-    generateSummary(transcriptId, false)
+    getSummary(transcriptId)
       .then((result) => {
         setSummary(result);
-        setStatus("idle");
+        setStatus(result ? "idle" : "missing");
       })
       .catch(() => setStatus("error"));
   }, [transcriptId]);
 
   async function handleGenerate(regenerate: boolean) {
-    setStatus("loading");
+    setStatus("generating");
     try {
       const result = await generateSummary(transcriptId, regenerate);
       setSummary(result);
@@ -97,17 +97,17 @@ export function SummaryPanel({
             )}
             <button
               onClick={() => void handleGenerate(summary !== null)}
-              disabled={status === "loading"}
+              disabled={status === "loading" || status === "generating"}
               style={{
                 font: "var(--type-label)",
                 color: "var(--text-muted)",
                 background: "none",
                 border: 0,
                 cursor: "pointer",
-                opacity: status === "loading" ? 0.5 : 1,
+                opacity: status === "loading" || status === "generating" ? 0.5 : 1,
               }}
             >
-              {status === "loading"
+              {status === "generating"
                 ? "Generating…"
                 : summary
                   ? "Regenerate"
@@ -115,6 +115,12 @@ export function SummaryPanel({
             </button>
           </div>
         </div>
+
+        {status === "missing" && (
+          <p style={{ color: "var(--text-muted)", fontSize: "var(--text-sm)", margin: 0 }}>
+            No summary saved for this transcript yet.
+          </p>
+        )}
 
         {status === "error" && (
           <p style={{ color: "var(--red-500)", fontSize: "var(--text-sm)", margin: 0 }}>
