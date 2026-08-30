@@ -46,7 +46,10 @@ export function TopBar({ left }: { left?: ReactNode }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
-        {left ?? (auth.status !== "signed-in" && <Wordmark size={17} />)}
+        {left ??
+          (auth.status !== "signed-in" && (
+            <Wordmark size={17} onClick={() => navigate("/")} style={{ cursor: "pointer" }} />
+          ))}
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -131,7 +134,7 @@ export function TopBar({ left }: { left?: ReactNode }) {
                   type="button"
                   onClick={() => {
                     setMenuOpen(false);
-                    void auth.signOut();
+                    void auth.signOut().then(() => navigate("/"));
                   }}
                   style={{
                     display: "flex",

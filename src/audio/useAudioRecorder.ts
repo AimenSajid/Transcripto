@@ -62,12 +62,24 @@ export function useAudioRecorder(): UseAudioRecorderResult {
 
     setStatus("requesting");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       streamRef.current = stream;
       mimeRef.current = picked;
       chunksRef.current = [];
 
-      const recorder = new MediaRecorder(stream, { mimeType: picked.mimeType });
+      // Without an explicit bitrate, MediaRecorder falls back to a low
+      // Opus/AAC default tuned for voice calls, not transcription accuracy.
+      const recorder = new MediaRecorder(stream, {
+        mimeType: picked.mimeType,
+        audioBitsPerSecond: 128_000,
+      });
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };

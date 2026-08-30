@@ -26,7 +26,7 @@ export function Sidebar() {
       }}
     >
       <div style={{ padding: "4px 4px 0" }}>
-        <Wordmark size={17} />
+        <Wordmark size={17} onClick={() => navigate("/")} style={{ cursor: "pointer" }} />
       </div>
 
       <Button fullWidth icon={<Icon name="plus" size={16} />} onClick={() => navigate("/")}>
